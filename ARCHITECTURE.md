@@ -1,0 +1,45 @@
+# Architecture
+
+## Current foundation
+
+Single activity with Compose and state-based navigation. Saveable screen and
+selected mechanic ID survive activity recreation. Lifecycle-aware Flow collection
+stops consuming database updates when the UI is inactive. Coroutine writes run
+through a constructor-injected repository; Room rejects main-thread database I/O.
+The application owns a lazily constructed Room database. There is no DI framework.
+
+Dependency direction: `app → core-model`, `app → simulation-engine → core-model`.
+Both JVM modules use no Android or Compose classes. The simulator module currently
+advertises unavailability only; it contains no runtime behavior.
+
+| Logical boundary | Initial location | Status |
+| --- | --- | --- |
+| app | app module | activity, navigation, theme, composition root |
+| core-model | core-model module | repository interface, explicit empty-document DTO |
+| device-catalog | app / devicecatalog | reserved; Phase 1 |
+| graph-engine | app / graphengine | reserved; Phase 2, extract pure graph operations |
+| simulation-engine | simulation-engine module | reserved; runtime in Phase 3 |
+| mechanic-storage | app / mechanicstorage | Room schema 1, JSON adapter |
+| overlay | app / overlay | reserved; Phase 8 |
+| ui-graph | app / uigraph | reserved; Phase 2 |
+| ui-library | app / uilibrary | reserved; Phase 6 |
+| ui-simulator | app / uisimulator | reserved; Phase 3 |
+| testing | JVM test source sets, app androidTest | codec, repository, launch smoke |
+
+## Storage contract
+
+`MechanicDocumentV1` is a dedicated wire DTO, not a serialized runtime class. It
+contains format/app/catalog versions, UUID metadata, notes and reserved graph fields.
+Phase 0 accepts empty graphs only and explicitly rejects populated graphs or unknown
+format versions. Typed device/binding/layout DTOs must replace the reserved JSON
+objects before Phase 2; retain versioning and add tested migration dispatch when needed.
+Portable import/export is not implemented. No destructive Room migration fallback
+is used. Exported Room schemas are source-controlled.
+
+## Planned runtime
+
+Graph data is authoritative for simulation inputs and generated guides. Runtime
+state will belong to SimulationSession, isolated from persistent configuration.
+A compact immutable model will be constructed once for the passive overlay.
+The app will suspend simulation in background; the overlay must never start it.
+Future scene view may reference the same device IDs, without duplicating settings.
