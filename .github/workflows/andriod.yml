@@ -1,0 +1,138 @@
+name: Android
+
+on:
+  push:
+    branches: [main]
+    paths-ignore: [creative-logic-mobile-source.zip]
+  pull_request:
+  workflow_dispatch:
+  workflow_run:
+    workflows: [Creative Logic Mobile source import]
+    branches: [main]
+    types: [completed]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: android-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    outputs:
+      tested-sha: ${{ steps.source.outputs.sha }}
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'workflow_run' && 'main' || github.sha }}
+          persist-credentials: false
+
+      - name: Record tested source
+        id: source
+        run: |
+          test ! -f creative-logic-mobile-source.zip
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+          echo "Tested source commit: $(git rev-parse HEAD)" >> "$GITHUB_STEP_SUMMARY"
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - uses: android-actions/setup-android@v3
+
+      - name: Install Android 37 SDK
+        run: sdkmanager 'platforms;android-37.0' 'build-tools;37.0.0'
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Test mobile source importer
+        run: python3 -m unittest discover -s testing -v
+
+      - name: Validate, test, lint and build
+        run: ./gradlew --no-daemon check lintDebug assembleDebug assembleDebugAndroidTest
+
+      - name: Verify and name debug APK
+        run: |
+          "$ANDROID_HOME/build-tools/37.0.0/apksigner" verify --verbose app/build/outputs/apk/debug/app-debug.apk
+          cp app/build/outputs/apk/debug/app-debug.apk creative-logic-mobile-debug.apk
+          sha256sum creative-logic-mobile-debug.apk > APK-SHA256.txt
+          git rev-parse HEAD > TESTED-COMMIT.txt
+          "$ANDROID_HOME/build-tools/37.0.0/apksigner" verify --print-certs creative-logic-mobile-debug.apk > SIGNING-CERTIFICATE.txt
+
+      - name: Download instructions
+        run: |
+          echo 'Open this run → Artifacts → creative-logic-mobile-debug.apk. Download the ZIP and extract creative-logic-mobile-debug.apk before installing.' >> "$GITHUB_STEP_SUMMARY"
+          echo 'This is an early debug build, not a release signed with a stable production certificate.' >> "$GITHUB_STEP_SUMMARY"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: creative-logic-mobile-debug.apk
+          path: |
+            creative-logic-mobile-debug.apk
+            APK-SHA256.txt
+            TESTED-COMMIT.txt
+            SIGNING-CERTIFICATE.txt
+          if-no-files-found: error
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: quality-reports
+          path: |
+            **/build/reports/tests/
+            app/build/reports/lint-results-*
+
+  launch-smoke:
+    needs: build
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.build.outputs.tested-sha }}
+          persist-credentials: false
+
+      - name: Record tested source
+        id: source
+        run: |
+          test ! -f creative-logic-mobile-source.zip
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+          echo "Tested source commit: $(git rev-parse HEAD)" >> "$GITHUB_STEP_SUMMARY"
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - uses: android-actions/setup-android@v3
+
+      - run: sdkmanager 'platforms;android-37.0' 'build-tools;37.0.0'
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 29
+          arch: x86_64
+          disable-animations: true
+          script: ./gradlew --no-daemon connectedDebugAndroidTest
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: launch-smoke-reports
+          path: app/build/reports/androidTests/
