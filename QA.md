@@ -50,7 +50,8 @@ were fixed with resources rather than suppressed.
 
 Local clean foundation validation passed on 2026-10-07: 5 JVM tests, lint with
 zero issues, debug and instrumentation APK assembly, signature verification.
-CI/emulator results remain pending; see CURRENT_STATE for the eventual run link.
+That statement describes the original local foundation run; subsequent green
+baseline CI is linked in CURRENT_STATE.
 
 Remote validation blocked on 2026-10-07: git push and CLI/connector GitHub blob
 writes returned HTTP 403 (Resource not accessible by integration). No CI or
@@ -74,3 +75,25 @@ Local end-to-end import proof passed: source ZIP committed to a fresh repository
 full embedded bootstrap importer executed, wrapper removed, expanded source
 committed and pushed to a local bare remote. This verifies the import sequence;
 it is not execution on GitHub Actions.
+
+## Foundation UX acceptance
+
+Baseline Android CI 37697700991 passed on 8805c77; owner reported installed/
+launched APK, then requested UX changes. New UX checks: create a named draft; blank
+name disables submission; saving opens its editor; Back/Library/search reopens the
+same draft; Learn explains semantic ports. Storage reopen test is retained.
+
+Check portrait/landscape and large fonts: every screen scrolls, controls avoid
+system bars, names wrap/ellipsize, creation dialog and editor placeholder can
+scroll. Navigation animations last at most 220 ms, respect Android duration scale,
+and do not continuously animate in idle/background. No live graph is rendered.
+Hardware frame-rate and phone responsiveness require real-device acceptance.
+
+UX candidate: all 5 JVM tests and strict lint passed; debug app and instrumented
+test APKs assembled. Local connected UI execution failed before running app
+tests: the unaccelerated API 29 emulator timed out fetching ADB properties and
+was rejected as unknown API level. This is an environment failure, not evidence
+that the candidate UI tests pass. Lowering emulator resolution allowed a rendered
+portrait home-screen inspection (API 29, 480×854): readable hero/CTA/preview and
+three navigation destinations, with no overlap. Property-fetch timeouts remained
+on retry. Run interaction tests in Android CI and check on a phone.

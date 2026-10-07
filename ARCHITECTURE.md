@@ -43,3 +43,13 @@ state will belong to SimulationSession, isolated from persistent configuration.
 A compact immutable model will be constructed once for the passive overlay.
 The app will suspend simulation in background; the overlay must never start it.
 Future scene view may reference the same device IDs, without duplicating settings.
+
+## Foundation presentation refinement
+
+CreativeTheme centralizes color/shape/typography tokens. BuilderGlyph uses small
+local Canvas strokes with labels supplied by semantic controls. Typed destinations
+retain saveable route/selection. AnimatedContent handles finite 120–220 ms screen
+transitions; there are no infinite animation clocks. Named draft creation uses the
+existing repository, with synchronous input validation and explicit asynchronous
+feedback. Library search is local presentation filtering of the observed drafts.
+All empty-graph restrictions and Android-free simulation boundaries remain intact.

@@ -1,41 +1,38 @@
 # Current state
 
-Current phase: **0 — foundation implemented; remote validation pending**.
+Current phase: **Phase 0 foundation accepted; UX polish candidate in validation**.
+The owner installed/launched the CI APK and requested a beginner-friendly redesign.
 
-Repository baseline: `aa56e8b3ee298e8f11e0d85cfd3acde086c1d3c4` (README only).
-No architecture or phase documents existed at baseline. No Actions runs existed.
+Baseline: `8805c77fee37b84d13e5e263ca6574f911c06201` on main.
+Latest validated GitHub Actions run: [37697700991](https://github.com/MavyyBlue/CreativeFN-WS/actions/runs/37697700991), success (build and API 29 smoke).
+This green baseline does not validate the new UX source until it is imported/built.
 
-Implemented: Android project, Compose home/navigation/editor shell, Room empty
-mechanic persistence, versioned JSON DTO/codec, constructor injection, JVM module
-boundaries, CI workflow and required docs. Mobile source-bundle importer and Actions APK
-download instructions now adapt Local Yuki’s two-stage delivery structure.
+Implemented foundation: native Kotlin/Compose, API 29 minimum and API 37 target,
+Room empty-draft persistence, explicit JSON DTO, constructor injection, JVM model
+and simulator boundaries, tested mobile importer and Actions APK delivery.
+
+UX candidate (0.0.2): lime/lavender dark theme, typography and local vector-style
+icons; responsive scrolling Home/Library/Learn screens; accessible bottom navigation;
+finite screen transitions; validated named-draft creation with save/retry feedback;
+case-insensitive draft search; plain-language event/function/binding guide; styled
+canvas placeholder with clear preview status. Existing Room/JSON format is retained.
 
 Supported simulated devices: **none**. Partial devices: **none**. No catalog loaded.
-Simulation compatibility: unavailable; saved documents use catalogVersion=unavailable.
-No last-test result, thumbnails, folders, file import/export, guides or overlay yet.
+Simulation, device placement/bindings, folders, portable mechanic import/export,
+real thumbnails, graph-generated guide and overlay remain unimplemented.
+The UI explicitly labels draft-only availability; no fake simulation or device ports.
 
-Known issues/limitations: empty mechanics only; no device editing or simulation;
-no first-use demonstration until Phase 3; no real-phone execution evidence yet.
+Validation: full Gradle tests/lint/debug app and test APK assembly passed locally
+for the UX candidate. Baseline has 5 JVM tests and 11 importer tests. Updated UI
+instrumentation covers named creation, blank-name prevention, library search and
+beginner navigation and activity recreation. Local API 29 software-emulator UI
+execution was blocked by an ADB property-fetch timeout (unknown API level);
+no candidate instrumentation pass is claimed. Rendered portrait home screen
+visually checked on API 29 at 480×854; launch succeeded. Landscape/large-font
+and interaction acceptance remain pending CI/phone checks.
+Physical UX/transition performance acceptance remains the owner's phone check.
 
-Latest locally validated implementation commit: `e6edf630b80b4184996f302f62597f9a413083fb`.
-Latest CI-validated commit: none.
-Latest validated GitHub Actions run: none. Publication blocked: git push and GitHub
-REST/connector blob writes return HTTP 403, Resource not accessible by integration.
-Repository permission metadata reports push=true, but the connected integration cannot write.
-Local tests/lint/build: PASS on 2026-10-07, `./gradlew clean check lintDebug assembleDebug assembleDebugAndroidTest`; 5 JVM tests, zero lint issues, debug app and test APKs built. APK signature verified; min/target API 29/37.
-Instrumentation install/launch/storage: compiled, execution pending CI emulator (no local emulator/KVM or physical phone).
-
-Next task: install the prepared workflow files and upload the source ZIP using
-the owner’s GitHub browser account (docs/MOBILE_DELIVERY.md), or restore integration
-write access and push local main. Run Android CI including API 29 emulator smoke. Do not mark
-Phase 0 complete before green CI. Then Phase 1 typed catalog for Trigger,
-Tracker and Barrier, with options serialization and verified reference metadata.
-
-Mobile delivery validation: 11 Python importer tests and actionlint checks passed;
-full Gradle tests/lint/debug app and test APK assembly still pass. New delivery
-workflow/source publication remains pending browser setup due integration HTTP 403.
-
-Local end-to-end import proof passed: source ZIP committed to a fresh repository,
-full embedded bootstrap importer executed, wrapper removed, expanded source
-committed and pushed to a local bare remote. This verifies the import sequence;
-it is not execution on GitHub Actions.
+Next task: import the UX source ZIP and obtain
+new green Android CI through the existing importer. Then Phase 1 typed catalog
+for Trigger, Tracker and Barrier. The GitHub write integration previously returned
+403; browser source upload remains the proven delivery path.

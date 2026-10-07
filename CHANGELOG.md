@@ -28,3 +28,15 @@ Foundation remains locally validated, pending remote CI and emulator acceptance.
 - Linked successful imports to Android CI; recorded source, APK hash and certificate.
 - Added precise phone upload/extract/install instructions. No app behavior changed.
 - GitHub write integration still returns 403; browser setup/import and CI pending.
+
+## 0.0.2 — Foundation UX polish (2026-10-07)
+
+- New lime/lavender theme, clearer typography, spacing, cards and lightweight icons.
+- Home/Library/Learn navigation with short transitions, safe insets and scrolling.
+- Named draft creation with blank-name protection, asynchronous save and retry feedback.
+- Search saved draft names and learn events/functions/bindings in plain language.
+- Explicit preview badges and an improved canvas placeholder; no simulation claim.
+- Existing saved data/schema retained; new documents record the actual app version.
+- New UI acceptance coverage; full local Gradle tests/lint/APK checks passed.
+- Baseline 8805c77 / Android run 37697700991 passed and owner installed/launched.
+  The new UX candidate requires its own CI and phone acceptance.

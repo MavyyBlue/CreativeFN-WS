@@ -4,8 +4,8 @@ Native Android companion for builders of Fortnite Creative 1.0. Prototype device
 logic locally, then use recorded settings and bindings to rebuild it manually.
 This project is independent of Epic Games and does not connect to Fortnite.
 
-**Current build: Phase 0 foundation.** The home screen can create and reopen empty
-mechanics stored locally with Room. The canvas is an explicitly labeled placeholder.
+**Current build: Phase 0 foundation with UX polish.** Home can create named empty drafts stored locally with Room; Library searches
+and reopens them. Learn explains events, functions and bindings. The canvas is an explicitly labeled placeholder.
 No device catalog, graph editing, simulation or overlay is implemented yet.
 This is not a functional logic builder or the completed MVP.
 
