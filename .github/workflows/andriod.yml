@@ -45,6 +45,10 @@ jobs:
           java-version: '21'
 
       - uses: android-actions/setup-android@v3
+        with:
+          cmdline-tools-version: '13114758'
+          packages: 'platform-tools'
+          log-accepted-android-sdk-licenses: false
 
       - name: Install Android 37 SDK
         run: sdkmanager 'platforms;android-37.0' 'build-tools;37.0.0'
@@ -113,6 +117,10 @@ jobs:
           java-version: '21'
 
       - uses: android-actions/setup-android@v3
+        with:
+          cmdline-tools-version: '13114758'
+          packages: 'platform-tools'
+          log-accepted-android-sdk-licenses: false
 
       - run: sdkmanager 'platforms;android-37.0' 'build-tools;37.0.0'
 
