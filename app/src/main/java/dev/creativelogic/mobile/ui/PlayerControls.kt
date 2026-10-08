@@ -21,7 +21,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
-import dev.creativelogic.model.MechanicDocumentV1
+import dev.creativelogic.model.SavedMechanic
 
 class DisplayPreferences(context: Context) {
     private val storage = context.applicationContext.getSharedPreferences("display-options", Context.MODE_PRIVATE)
@@ -61,12 +61,12 @@ internal fun DisplayToggle(label: String, checked: Boolean, onChange: (Boolean) 
 }
 
 @Composable
-internal fun RecentDrawer(documents: List<MechanicDocumentV1>, onOpen: (MechanicDocumentV1) -> Unit, onClose: () -> Unit) {
+internal fun RecentDrawer(documents: List<SavedMechanic>, onOpen: (SavedMechanic) -> Unit, onClose: () -> Unit) {
     val keyboard = LocalSoftwareKeyboardController.current
     var query by rememberSaveable { mutableStateOf("") }
     val recent = remember(documents, query) {
         documents.filter { it.mechanicMetadata.name.contains(query.trim(), ignoreCase = true) }
-            .sortedWith(compareByDescending<MechanicDocumentV1> { it.mechanicMetadata.modifiedAtEpochMillis }.thenBy { it.mechanicMetadata.id })
+            .sortedWith(compareByDescending<SavedMechanic> { it.mechanicMetadata.modifiedAtEpochMillis }.thenBy { it.mechanicMetadata.id })
     }
     ModalDrawerSheet(Modifier.widthIn(max = 320.dp)) {
         Row(Modifier.padding(horizontal = 16.dp), verticalAlignment = Alignment.CenterVertically) {

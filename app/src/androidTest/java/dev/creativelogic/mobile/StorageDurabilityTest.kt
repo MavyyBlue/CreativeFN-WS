@@ -1,10 +1,13 @@
 package dev.creativelogic.mobile
 
 import androidx.room.Room
+import dev.creativelogic.graph.GraphEditor
+import dev.creativelogic.catalog.InitialDeviceCatalog
+import dev.creativelogic.model.*
 import androidx.test.platform.app.InstrumentationRegistry
 import dev.creativelogic.mobile.mechanicstorage.MechanicDatabase
 import dev.creativelogic.mobile.mechanicstorage.RoomMechanicRepository
-import dev.creativelogic.model.MechanicDocumentV1
+import dev.creativelogic.model.SavedMechanic
 import dev.creativelogic.model.MechanicMetadataV1
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
@@ -16,7 +19,13 @@ class StorageDurabilityTest {
         val context = InstrumentationRegistry.getInstrumentation().targetContext
         val filename = "durability-test.db"
         context.deleteDatabase(filename)
-        val document = MechanicDocumentV1(mechanicMetadata = MechanicMetadataV1(
+        val editor = GraphEditor(MechanicGraph(), InitialDeviceCatalog.catalog)
+        val a = editor.add("trigger"); val b = editor.add("tracker"); val c = editor.add("barrier")
+        editor.connect(a.id, DeviceEventId("onTriggered"), b.id, DeviceFunctionId("incrementProgress"))
+        editor.connect(b.id, DeviceEventId("onComplete"), c.id, DeviceFunctionId("disable"))
+        editor.move(b.id, -30f, 90f)
+        editor.viewport(GraphViewport(60f, 20f, 0.7f))
+        val document = SavedMechanic(graph = editor.graph, mechanicMetadata = MechanicMetadataV1(
             "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee", "Durable mechanic", 1, 2,
         ))
         try {

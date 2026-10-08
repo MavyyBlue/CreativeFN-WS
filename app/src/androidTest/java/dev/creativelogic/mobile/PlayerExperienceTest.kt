@@ -10,7 +10,7 @@ class PlayerExperienceTest {
     @get:Rule val compose = createAndroidComposeRule<MainActivity>()
 
     @Test fun contextualInformationOpensAndClosesWithoutClutteringHome() {
-        val explanation = "Start with a name for your idea. Your saved drafts will appear in Recent and Library. Device placement and testing are coming later."
+        val explanation = "Start with a name for your idea. Add and configure devices, then connect their Events to Functions. Your saved mechanics appear in Recent and Library. Simulation is not available yet."
         compose.onNodeWithText(explanation).assertDoesNotExist()
         compose.onNodeWithContentDescription("Information: New mechanic").performClick()
         compose.onNodeWithText(explanation).assertIsDisplayed()

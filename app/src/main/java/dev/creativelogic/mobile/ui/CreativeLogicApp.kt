@@ -8,11 +8,8 @@ import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -25,16 +22,22 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.lifecycle.viewmodel.initializer
+import androidx.lifecycle.viewmodel.viewModelFactory
+import dev.creativelogic.mobile.uigraph.GraphWorkspaceViewModel
+import dev.creativelogic.mobile.uigraph.GraphEditorScreen
 import dev.creativelogic.mobile.BuildConfig
-import dev.creativelogic.model.MechanicDocumentV1
+import dev.creativelogic.model.SavedMechanic
 import dev.creativelogic.model.MechanicMetadataV1
 import dev.creativelogic.model.MechanicRepository
 import kotlinx.coroutines.CancellationException
@@ -52,6 +55,13 @@ fun CreativeLogicApp(repository: MechanicRepository, preferences: DisplayPrefere
     var showNavigation by rememberSaveable { mutableStateOf(preferences.showNavigation) }
     var displayOptions by rememberSaveable { mutableStateOf(false) }
     val drawer = rememberDrawerState(DrawerValue.Closed)
+    val workspace: GraphWorkspaceViewModel = viewModel(factory = remember(repository) { viewModelFactory { initializer { GraphWorkspaceViewModel(repository) } } })
+    val lifecycle = LocalLifecycleOwner.current.lifecycle
+    DisposableEffect(lifecycle, workspace) {
+        val observer = LifecycleEventObserver { _, event -> if (event == Lifecycle.Event.ON_STOP) workspace.flushInBackground() }
+        lifecycle.addObserver(observer)
+        onDispose { lifecycle.removeObserver(observer) }
+    }
     val documents by remember(repository) { repository.observeAll() }
         .collectAsStateWithLifecycle(initialValue = emptyList())
     var route by rememberSaveable { mutableStateOf(Destination.Home.name) }
@@ -64,12 +74,21 @@ fun CreativeLogicApp(repository: MechanicRepository, preferences: DisplayPrefere
     var error by remember { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()
     val keyboard = LocalSoftwareKeyboardController.current
-    val openNew = { pendingId = UUID.randomUUID().toString(); name = ""; error = null; creating = true }
-    val openDocument: (MechanicDocumentV1) -> Unit = {
+    val navigate: (Destination) -> Unit = { next ->
         keyboard?.hide()
-        selectedId = it.mechanicMetadata.id
-        route = Destination.Editor.name
-        scope.launch { drawer.close() }
+        scope.launch { if (destination != Destination.Editor || workspace.flush()) route = next.name }
+    }
+    val openNew = { pendingId = UUID.randomUUID().toString(); name = ""; error = null; creating = true }
+    val openDocument: (SavedMechanic) -> Unit = {
+        keyboard?.hide()
+        val document = it
+        scope.launch {
+            if (destination != Destination.Editor || workspace.flush()) {
+                selectedId = document.mechanicMetadata.id
+                route = Destination.Editor.name
+                drawer.close()
+            }
+        }
     }
     val saveDraft = {
         if (name.isNotBlank() && !saving) {
@@ -79,7 +98,7 @@ fun CreativeLogicApp(repository: MechanicRepository, preferences: DisplayPrefere
                 try {
                     val now = System.currentTimeMillis()
                     val id = pendingId.ifBlank { UUID.randomUUID().toString().also { pendingId = it } }
-                    repository.save(MechanicDocumentV1(appVersion = BuildConfig.VERSION_NAME, mechanicMetadata = MechanicMetadataV1(
+                    repository.save(SavedMechanic(appVersion = BuildConfig.VERSION_NAME, mechanicMetadata = MechanicMetadataV1(
                         id, name.trim(), now, now,
                     )))
                     selectedId = id
@@ -94,10 +113,10 @@ fun CreativeLogicApp(repository: MechanicRepository, preferences: DisplayPrefere
             }
         }
     }
-    BackHandler(destination != Destination.Home && !creating && !drawer.isOpen) { route = Destination.Home.name }
+    BackHandler(destination != Destination.Home && !creating && !drawer.isOpen) { navigate(Destination.Home) }
     BackHandler(drawer.isOpen) { scope.launch { drawer.close() } }
     CreativeTheme {
-        ModalNavigationDrawer(drawerState = drawer, gesturesEnabled = documents.isNotEmpty(), drawerContent = {
+        ModalNavigationDrawer(drawerState = drawer, gesturesEnabled = documents.isNotEmpty() && destination != Destination.Editor, drawerContent = {
             RecentDrawer(documents, onOpen = openDocument, onClose = { keyboard?.hide(); scope.launch { drawer.close() } })
         }) {
         Scaffold(
@@ -111,7 +130,7 @@ fun CreativeLogicApp(repository: MechanicRepository, preferences: DisplayPrefere
                 if (showHeader) {
                     if (destination == Destination.Editor) EditorHeader(
                     documents.find { it.mechanicMetadata.id == selectedId }?.mechanicMetadata?.name ?: "Your mechanic",
-                    onBack = { route = Destination.Home.name },
+                    onBack = { navigate(Destination.Home) },
                     ) else BrandHeader()
                 }
             },
@@ -119,7 +138,7 @@ fun CreativeLogicApp(repository: MechanicRepository, preferences: DisplayPrefere
                 if (showNavigation) NavigationBar(containerColor = MaterialTheme.colorScheme.surfaceContainerLow) {
                     Destination.entries.filter { it != Destination.Editor && it != Destination.Devices && (it != Destination.Recent || documents.isNotEmpty()) }.forEach { item ->
                         NavigationBarItem(selected = if (item == Destination.Recent) drawer.isOpen else destination == item,
-                            onClick = { keyboard?.hide(); if (item == Destination.Recent) scope.launch { drawer.open() } else route = item.name },
+                            onClick = { keyboard?.hide(); if (item == Destination.Recent) scope.launch { drawer.open() } else navigate(item) },
                             icon = { BuilderGlyph(item.glyph, if (destination == item)
                                 MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant) },
                             label = { Text(item.label) })
@@ -138,9 +157,9 @@ fun CreativeLogicApp(repository: MechanicRepository, preferences: DisplayPrefere
                         Destination.Home -> HomeScreen(openNew)
                         Destination.Recent -> HomeScreen(openNew)
                         Destination.Library -> LibraryScreen(documents, openNew, openDocument)
-                        Destination.Learn -> LearnScreen { route = Destination.Devices.name }
+                        Destination.Learn -> LearnScreen { navigate(Destination.Devices) }
                         Destination.Devices -> DeviceReferenceScreen()
-                        Destination.Editor -> EditorScreen()
+                        Destination.Editor -> GraphEditorScreen(documents.find { it.mechanicMetadata.id == selectedId }, workspace)
                     }
                 }
             }
@@ -155,7 +174,7 @@ fun CreativeLogicApp(repository: MechanicRepository, preferences: DisplayPrefere
                 Destination.entries.filter { it != Destination.Editor && (it != Destination.Recent || documents.isNotEmpty()) }.forEach { item ->
                     TextButton(onClick = {
                         displayOptions = false
-                        if (item == Destination.Recent) scope.launch { drawer.open() } else route = item.name
+                        if (item == Destination.Recent) scope.launch { drawer.open() } else navigate(item)
                     }, modifier = Modifier.fillMaxWidth()) { Text(item.label) }
                 }
             } },
@@ -165,7 +184,7 @@ fun CreativeLogicApp(repository: MechanicRepository, preferences: DisplayPrefere
             onDismissRequest = { if (!saving) creating = false },
             icon = { BuilderGlyph(Glyph.Graph, MaterialTheme.colorScheme.primary) },
             title = { Row(verticalAlignment = Alignment.CenterVertically) { Text("Name your mechanic", Modifier.weight(1f));
-                InformationButton("New mechanic", "A mechanic is a small system of devices working together. Name the idea you want to build. You can save a draft now; device placement and testing will be added later.") } },
+                InformationButton("New mechanic", "A mechanic is a small system of devices working together. Name your idea, then add devices and bind their Events to Functions. Simulation is not available yet.") } },
             text = {
                 Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     OutlinedTextField(value = name, onValueChange = { if (!saving) name = it.take(80) },
@@ -194,7 +213,7 @@ private fun BrandHeader() {
         Column(Modifier.weight(1f)) {
             Text("CREATIVE LOGIC", style = MaterialTheme.typography.titleMedium)
         }
-        InformationButton("Creative Logic", "Plan device mechanics for Creative and rebuild them by hand. Your work stays on this device. This version saves named drafts; device placement, testing and the build overlay are not available yet.")
+        InformationButton("Creative Logic", "Plan device mechanics for Creative and rebuild them by hand. Your graphs stay on this device. These device settings are reference-only; simulation and the build overlay are not available yet.")
     }
 }
 
@@ -208,7 +227,7 @@ private fun EditorHeader(name: String, onBack: () -> Unit) {
         Column(Modifier.weight(1f).padding(horizontal = 8.dp)) {
             Text(name, modifier = Modifier.testTag("editor-title"), style = MaterialTheme.typography.titleMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
         }
-        InformationButton("Saved mechanic", "This draft is saved on this device. Device placement and bindings are not available yet.")
+        InformationButton("Saved mechanic", "This mechanic is saved on this device. Edit its devices and bindings in the canvas. Your graph saves automatically after changes.")
     }
 }
 
@@ -219,12 +238,12 @@ private fun HomeScreen(onNew: () -> Unit) {
             BuilderGlyph(Glyph.Add, MaterialTheme.colorScheme.onPrimary)
             Spacer(Modifier.width(8.dp)); Text("New Mechanic")
         }
-        InformationButton("New mechanic", "Start with a name for your idea. Your saved drafts will appear in Recent and Library. Device placement and testing are coming later.")
+        InformationButton("New mechanic", "Start with a name for your idea. Add and configure devices, then connect their Events to Functions. Your saved mechanics appear in Recent and Library. Simulation is not available yet.")
     }
 }
 
 @Composable
-private fun LibraryScreen(documents: List<MechanicDocumentV1>, onNew: () -> Unit, onOpen: (MechanicDocumentV1) -> Unit) {
+private fun LibraryScreen(documents: List<SavedMechanic>, onNew: () -> Unit, onOpen: (SavedMechanic) -> Unit) {
     val keyboard = LocalSoftwareKeyboardController.current
     var query by rememberSaveable { mutableStateOf("") }
     val matching = remember(documents, query) { documents.filter { it.mechanicMetadata.name.contains(query.trim(), ignoreCase = true) } }
@@ -254,7 +273,7 @@ private fun LibraryScreen(documents: List<MechanicDocumentV1>, onNew: () -> Unit
 }
 
 @Composable
-private fun MechanicRow(document: MechanicDocumentV1, onOpen: (MechanicDocumentV1) -> Unit) {
+private fun MechanicRow(document: SavedMechanic, onOpen: (SavedMechanic) -> Unit) {
     Card(onClick = { onOpen(document) }, colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer)) {
         Row(Modifier.fillMaxWidth().padding(18.dp), verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(14.dp)) {
@@ -297,33 +316,5 @@ private fun ConceptCard(title: String, body: String) {
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         Text(title, Modifier.weight(1f), style = MaterialTheme.typography.titleLarge)
         InformationButton(title, body)
-    }
-}
-
-@Composable
-private fun EditorScreen() {
-    val dots = MaterialTheme.colorScheme.outlineVariant
-    Column(Modifier.fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-        Box(Modifier.fillMaxWidth().weight(1f).clip(MaterialTheme.shapes.extraLarge)
-            .background(MaterialTheme.colorScheme.surfaceContainerLow), contentAlignment = Alignment.Center) {
-            Canvas(Modifier.fillMaxSize()) {
-                val spacing = 24.dp.toPx()
-                var x = spacing
-                while (x < size.width) {
-                    var y = spacing
-                    while (y < size.height) { drawCircle(dots, 1.dp.toPx(), Offset(x, y)); y += spacing }
-                    x += spacing
-                }
-            }
-            Surface(Modifier.padding(20.dp).widthIn(max = 400.dp), shape = MaterialTheme.shapes.large,
-                color = MaterialTheme.colorScheme.surfaceContainer, border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)) {
-                Column(Modifier.verticalScroll(rememberScrollState()).padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    BuilderGlyph(Glyph.Graph, MaterialTheme.colorScheme.primary, Modifier.size(40.dp))
-                    Text("Logic canvas", style = MaterialTheme.typography.titleLarge)
-                    InformationButton("Logic canvas", "Your named draft is saved. Device placement, connections and simulation are not available in this version.")
-                }
-            }
-        }
     }
 }

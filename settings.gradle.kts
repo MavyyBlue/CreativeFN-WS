@@ -4,4 +4,4 @@ dependencyResolutionManagement {
     repositories { google(); mavenCentral() }
 }
 rootProject.name = "Creative-Logic-Mobile"
-include(":app", ":core-model", ":simulation-engine", ":device-catalog")
+include(":app", ":core-model", ":simulation-engine", ":device-catalog", ":graph-engine")

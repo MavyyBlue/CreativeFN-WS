@@ -25,7 +25,9 @@ DeviceInstanceDtoV1/DeviceOptionDtoV1 are explicit wire DTOs. The codec validate
 before encoding and after decoding. Unknown wire/catalog versions, malformed values
 and unsupported device types require rejection/migration rather than coercion.
 No domain/runtime implementation classes are serialized as a storage contract.
-The existing MechanicDocumentV1 still rejects populated graphs until Phase 2.
+Phase 2 uses explicit MechanicDocumentDtoV2/BindingDtoV2/ViewportDtoV2. Legacy
+MechanicDocumentV1 remains strict for migration of previously empty drafts. Graph
+validation rejects duplicate semantic bindings and preserves intentional cycles.
 
 Six JVM tests cover all three definitions, defaults/modified settings, options,
 metadata, semantic bindings and DTO round trips including Unicode text. Simulation

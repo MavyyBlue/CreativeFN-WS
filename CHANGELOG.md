@@ -71,3 +71,18 @@ Foundation remains locally validated, pending remote CI and emulator acceptance.
   container, avoiding duplicate names retained in a closed sidebar.
 - Keep visibility checks and assert reopened editor title matches the draft.
 - No workflow checks disabled; new green CI remains pending.
+
+
+## 0.0.4 — Phase 2 graph editor candidate (2026-10-08)
+
+- Validated baseline f305c5d / Android CI 37726479431; owner installed and accepted.
+- Touch canvas with node dragging, pan/pinch zoom, Fit and semantic Event → Function ports.
+- Searchable device palette, typed settings, names/notes, duplication/deletion,
+  binding creation/removal and bounded undo/redo.
+- Android-free graph engine, explicit populated graph format 2 and legacy empty-
+  draft migration; Room autosave with serialized writes, navigation/background flush
+  and failure/retry feedback. Existing player controls retained.
+- Added 13 JVM tests, graph interaction instrumentation and populated Room reopen
+  coverage. Local full checks/lint/debug app and test APK builds pass; 24 JVM and
+  11 importer tests pass. New Android CI/phone acceptance remains pending.
+- Trigger/Tracker/Barrier remain Reference Only; simulation is next, not implemented.

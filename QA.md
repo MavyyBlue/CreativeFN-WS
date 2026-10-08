@@ -19,7 +19,7 @@ acceptance. Instrumentation is separate from JVM tests; it needs a device/emulat
 Install debug APK on an API 29+ phone. Launch, create an empty mechanic, return to
 home, open Library, force-stop/reopen, and verify the same record remains. Rotate
 while editing and verify selected record persists. Confirm no permissions are
-requested. Device graph contents do not exist yet.
+requested. Graph placement/bindings are now available in the Phase 2 candidate.
 
 ## Later phases
 
@@ -86,7 +86,7 @@ same draft; Learn explains semantic ports. Storage reopen test is retained.
 Check portrait/landscape and large fonts: every screen scrolls, controls avoid
 system bars, names wrap/ellipsize, creation dialog and editor placeholder can
 scroll. Navigation animations last at most 220 ms, respect Android duration scale,
-and do not continuously animate in idle/background. No live graph is rendered.
+and do not continuously animate in idle/background. That historical UX check preceded the Phase 2 canvas.
 Hardware frame-rate and phone responsiveness require real-device acceptance.
 
 UX candidate: all 5 JVM tests and strict lint passed; debug app and instrumented
@@ -148,3 +148,31 @@ editor title is checked again after reopening from Library. New CI is required.
 
 Post-repair local full Gradle check/lintDebug/app and test APK assembly passed,
 along with 11 JVM tests, 11 importer tests and workflow syntax validation.
+
+
+## Phase 2 graph candidate — 2026-10-08
+
+Baseline f305c5d / Android run 37726479431 passed all nine Android tests; owner
+accepted the installed app and requested continuation. Phase 2 adds 13 JVM tests:
+validated add/move/options/delete/bind/undo/redo, independent UUID duplication,
+non-undoable viewport, populated format-2 round trip, legacy migration, unsupported
+version/dangling endpoint rejection, ordered overlapping writes and save-failure
+retry. Total: 24 JVM tests passed. Full Gradle check, strict lintDebug, app/test APK
+assembly, 11 importer tests and both unchanged workflows' actionlint passed.
+
+Ten Android tests compile; candidate execution is pending new CI. New graph flow
+creates/configures Trigger → Tracker → Barrier, checks typed bindings and undo/redo,
+saves, recreates and reopens from Library, then verifies the configured target.
+Dropdown matchers require their menu ancestor to avoid matching an already selected
+device in another control. Existing scoped editor/Library/Recent smoke assertions
+remain. Storage durability compares a populated graph and viewport after closing
+and reopening Room. Compilation is not instrumented execution.
+
+Phone acceptance: create those three devices; drag Tracker; pan, pinch and Fit;
+edit target/notes/name; connect an event to a function; reject an invalid attempt;
+duplicate/delete a device and undo/redo; remove a binding; wait for Saved, force-
+stop/reopen and compare layout/settings/bindings. Rotate with pending edits and
+verify state; hide bars and restore with View options. Test landscape, large fonts
+and long names. Dismissing settings discards uncommitted fields; Done applies them.
+Measure 50/100 nodes and 200 connections before claiming rendering targets.
+Simulation behavior must not be inferred from this editor milestone.

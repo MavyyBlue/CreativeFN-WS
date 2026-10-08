@@ -4,10 +4,13 @@ Native Android companion for builders of Fortnite Creative 1.0. Prototype device
 logic locally, then use recorded settings and bindings to rebuild it manually.
 This project is independent of Epic Games and does not connect to Fortnite.
 
-**Current build: Phase 0 foundation with UX polish.** Home can create named empty drafts stored locally with Room; Library searches
-and reopens them. Learn explains events, functions and bindings. The canvas is an explicitly labeled placeholder.
-No device catalog, graph editing, simulation or overlay is implemented yet.
-This is not a functional logic builder or the completed MVP.
+**Current candidate: Phase 2 graph editor (0.0.4).** Create local mechanics,
+place and configure Trigger/Tracker/Barrier, connect Events to Functions, move
+nodes, pan/zoom, undo/redo and reopen saved graphs. Home starts with New Mechanic;
+contextual information, hideable bars and Recent keep controls compact.
+All devices are Reference Only: simulation and overlay are future milestones.
+Local checks pass; the candidate still needs its own green CI and phone acceptance.
+This is not the completed MVP.
 
 ## Build
 
@@ -28,7 +31,7 @@ The app uses managed Kotlin code and supports ARM64 without a native ABI restric
 
 ## Project boundaries
 
-`core-model/` and `simulation-engine/` are Android-free JVM modules. Other planned
+`core-model/`, `device-catalog/`, `graph-engine/` and `simulation-engine/` are Android-free JVM modules. Other planned
 boundaries start as packages in `app/`; see [ARCHITECTURE.md](ARCHITECTURE.md).
 Constructor injection supplies the repository. No DI framework, account, network
 permission, ads, analytics or telemetry is used.
@@ -52,7 +55,3 @@ Use the [mobile delivery guide](docs/MOBILE_DELIVERY.md): install the two workfl
 files once, upload the source ZIP at repository root, then extract the APK from the
 successful Android run’s GitHub Actions artifact. A workspace path or temporary
 external APK URL is not the supported mobile distribution flow.
-
-Phase 1 candidate adds typed reference-only Trigger/Tracker/Barrier definitions.
-Home, contextual information, hideable bars and the Recent sidebar keep planning
-controls compact. Device placement and simulation are not yet implemented.

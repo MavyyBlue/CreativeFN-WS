@@ -17,13 +17,19 @@ class DeviceInstanceCodec(private val catalog: DeviceCatalog) {
     private val json = Json { encodeDefaults = true }
     fun encode(instance: CreativeDeviceInstance): String {
         catalog.validate(instance)
-        return json.encodeToString(DeviceInstanceDtoV1(catalogVersion = catalog.catalogVersion,
+        return json.encodeToString(toDto(instance))
+    }
+    fun toDto(instance: CreativeDeviceInstance): DeviceInstanceDtoV1 {
+        catalog.validate(instance)
+        return DeviceInstanceDtoV1(catalogVersion = catalog.catalogVersion,
             id = instance.id, deviceTypeId = instance.deviceTypeId, name = instance.name,
             graphX = instance.graphX, graphY = instance.graphY,
-            options = instance.configuredOptions.mapValues { (_, value) -> encodeOption(value) }, notes = instance.builderNotes))
+            options = instance.configuredOptions.mapValues { (_, value) -> encodeOption(value) }, notes = instance.builderNotes)
     }
     fun decode(source: String): CreativeDeviceInstance {
-        val dto = json.decodeFromString<DeviceInstanceDtoV1>(source)
+        return fromDto(json.decodeFromString<DeviceInstanceDtoV1>(source))
+    }
+    fun fromDto(dto: DeviceInstanceDtoV1): CreativeDeviceInstance {
         require(dto.formatVersion == 1) { "Unsupported device format" }
         require(dto.catalogVersion == catalog.catalogVersion) { "Unsupported catalog version; migration required" }
         return CreativeDeviceInstance(dto.id, dto.deviceTypeId, dto.name, dto.graphX, dto.graphY,

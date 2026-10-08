@@ -50,7 +50,7 @@ object InitialDeviceCatalog {
     private fun function(id: String, name: String) = DeviceFunctionDefinition(DeviceFunctionId(id), name)
     private fun device(id: String, name: String, category: String, options: List<DeviceOptionDefinition>, events: List<DeviceEventDefinition>, functions: List<DeviceFunctionDefinition>, path: String) = CreativeDeviceDefinition(
         id, name, category, options, events, functions, SimulationSupport.NOT_SIMULATED,
-        listOf("Reference only. Device placement and simulation are not available yet.", "These are prototype settings, not a verified copy of every Fortnite option or default."),
+        listOf("Reference only. Simulation is not available yet.", "These are prototype settings, not a verified copy of every Fortnite option or default."),
         "https://dev.epicgames.com/documentation/en-us/fortnite-creative/$path-in-fortnite-creative",
     )
     val catalog = DeviceCatalog(1, "0.1.0-draft", null, null, listOf(

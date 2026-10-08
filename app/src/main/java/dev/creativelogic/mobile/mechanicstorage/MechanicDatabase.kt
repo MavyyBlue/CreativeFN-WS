@@ -8,8 +8,9 @@ import androidx.room.OnConflictStrategy
 import androidx.room.PrimaryKey
 import androidx.room.Query
 import androidx.room.RoomDatabase
-import dev.creativelogic.model.MechanicDocumentCodec
-import dev.creativelogic.model.MechanicDocumentV1
+import dev.creativelogic.graph.MechanicGraphCodec
+import dev.creativelogic.catalog.InitialDeviceCatalog
+import dev.creativelogic.model.SavedMechanic
 import dev.creativelogic.model.MechanicRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -36,15 +37,16 @@ abstract class MechanicDatabase : RoomDatabase() {
 }
 
 class RoomMechanicRepository(private val dao: MechanicDao) : MechanicRepository {
-    override fun observeAll(): Flow<List<MechanicDocumentV1>> = dao.observeAll().map { entities ->
-        entities.map { MechanicDocumentCodec.decode(it.documentJson) }
+    private val codec = MechanicGraphCodec(InitialDeviceCatalog.catalog)
+    override fun observeAll(): Flow<List<SavedMechanic>> = dao.observeAll().map { entities ->
+        entities.map { codec.decode(it.documentJson) }
     }
 
-    override suspend fun save(document: MechanicDocumentV1) = dao.save(
+    override suspend fun save(document: SavedMechanic) = dao.save(
         MechanicEntity(
             document.mechanicMetadata.id,
             document.mechanicMetadata.modifiedAtEpochMillis,
-            MechanicDocumentCodec.encode(document),
+            codec.encode(document),
         ),
     )
 }
