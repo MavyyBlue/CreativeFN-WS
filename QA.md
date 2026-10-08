@@ -114,3 +114,23 @@ All 5 JVM tests and 11 importer tests passed; both workflows pass actionlint.
 Local test-APK installation on the unaccelerated API 29 emulator exceeded
 240 seconds during dex compilation. No repaired UI pass is claimed.
 Instrumentation and new green CI must be recorded separately when executed.
+
+
+## Player controls and Phase 1 catalog candidate
+
+Baseline Android run 37705777016 on 611434a passed including repaired smoke tests.
+New Android acceptance tests cover popup visibility/dismissal, hiding/restoring both
+bars across recreation, Recent sidebar search/selection and Tracker reference ports.
+Draft/search/storage tests are retained and updated for the simplified Home.
+JVM catalog tests reject invalid settings/ports/UUIDs and future schemas/catalogs,
+and round-trip all five value kinds. Reference badges do not establish simulation.
+
+On a phone: hide both bars, force-stop/reopen, restore them through View options;
+check compact/landscape/large-font popups and sidebar dismissal/search/long lists.
+Home should contain no inline developmental explanation or Recent list.
+Instrumented execution and green CI for this candidate must be recorded separately.
+
+Final candidate: 11 JVM tests, strict lint, app/test APK builds, APK signature
+verification and 11 importer tests passed. Local API 29 software-emulator install
+exceeded 300 seconds; Android System UI showed an unresponsive-system dialog.
+Rendered-app and updated interaction checks remain pending; no UI pass is claimed.

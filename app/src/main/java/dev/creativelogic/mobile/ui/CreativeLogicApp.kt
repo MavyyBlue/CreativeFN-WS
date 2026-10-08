@@ -16,7 +16,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
@@ -28,8 +27,6 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.ImeAction
@@ -45,12 +42,16 @@ import kotlinx.coroutines.launch
 import java.util.UUID
 
 private enum class Destination(val label: String, val glyph: Glyph) {
-    Home("Home", Glyph.Home), Library("Library", Glyph.Library), Learn("Learn", Glyph.Learn),
-    Editor("Editor", Glyph.Graph),
+    Home("Home", Glyph.Home), Recent("Recent", Glyph.Recent), Library("Library", Glyph.Library), Learn("Learn", Glyph.Learn),
+    Devices("Devices", Glyph.Graph), Editor("Editor", Glyph.Graph),
 }
 
 @Composable
-fun CreativeLogicApp(repository: MechanicRepository) {
+fun CreativeLogicApp(repository: MechanicRepository, preferences: DisplayPreferences) {
+    var showHeader by rememberSaveable { mutableStateOf(preferences.showHeader) }
+    var showNavigation by rememberSaveable { mutableStateOf(preferences.showNavigation) }
+    var displayOptions by rememberSaveable { mutableStateOf(false) }
+    val drawer = rememberDrawerState(DrawerValue.Closed)
     val documents by remember(repository) { repository.observeAll() }
         .collectAsStateWithLifecycle(initialValue = emptyList())
     var route by rememberSaveable { mutableStateOf(Destination.Home.name) }
@@ -68,6 +69,7 @@ fun CreativeLogicApp(repository: MechanicRepository) {
         keyboard?.hide()
         selectedId = it.mechanicMetadata.id
         route = Destination.Editor.name
+        scope.launch { drawer.close() }
     }
     val saveDraft = {
         if (name.isNotBlank() && !saving) {
@@ -92,20 +94,32 @@ fun CreativeLogicApp(repository: MechanicRepository) {
             }
         }
     }
-    BackHandler(destination != Destination.Home && !creating) { route = Destination.Home.name }
+    BackHandler(destination != Destination.Home && !creating && !drawer.isOpen) { route = Destination.Home.name }
+    BackHandler(drawer.isOpen) { scope.launch { drawer.close() } }
     CreativeTheme {
+        ModalNavigationDrawer(drawerState = drawer, gesturesEnabled = documents.isNotEmpty(), drawerContent = {
+            RecentDrawer(documents, onOpen = openDocument, onClose = { keyboard?.hide(); scope.launch { drawer.close() } })
+        }) {
         Scaffold(
+            floatingActionButton = {
+                SmallFloatingActionButton(onClick = { keyboard?.hide(); displayOptions = true },
+                    modifier = Modifier.semantics { contentDescription = "View options" }) {
+                    BuilderGlyph(Glyph.Menu, MaterialTheme.colorScheme.onPrimaryContainer)
+                }
+            },
             topBar = {
-                if (destination == Destination.Editor) EditorHeader(
+                if (showHeader) {
+                    if (destination == Destination.Editor) EditorHeader(
                     documents.find { it.mechanicMetadata.id == selectedId }?.mechanicMetadata?.name ?: "Your mechanic",
                     onBack = { route = Destination.Home.name },
-                ) else BrandHeader()
+                    ) else BrandHeader()
+                }
             },
             bottomBar = {
-                if (destination != Destination.Editor) NavigationBar(containerColor = MaterialTheme.colorScheme.surfaceContainerLow) {
-                    Destination.entries.filter { it != Destination.Editor }.forEach { item ->
-                        NavigationBarItem(selected = destination == item,
-                            onClick = { keyboard?.hide(); route = item.name },
+                if (showNavigation) NavigationBar(containerColor = MaterialTheme.colorScheme.surfaceContainerLow) {
+                    Destination.entries.filter { it != Destination.Editor && it != Destination.Devices && (it != Destination.Recent || documents.isNotEmpty()) }.forEach { item ->
+                        NavigationBarItem(selected = if (item == Destination.Recent) drawer.isOpen else destination == item,
+                            onClick = { keyboard?.hide(); if (item == Destination.Recent) scope.launch { drawer.open() } else route = item.name },
                             icon = { BuilderGlyph(item.glyph, if (destination == item)
                                 MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant) },
                             label = { Text(item.label) })
@@ -121,22 +135,39 @@ fun CreativeLogicApp(repository: MechanicRepository) {
                 }, label = "Screen transition") { screen ->
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
                     when (screen) {
-                        Destination.Home -> HomeScreen(documents, openNew, openDocument,
-                            onLibrary = { route = Destination.Library.name }, onLearn = { route = Destination.Learn.name })
+                        Destination.Home -> HomeScreen(openNew)
+                        Destination.Recent -> HomeScreen(openNew)
                         Destination.Library -> LibraryScreen(documents, openNew, openDocument)
-                        Destination.Learn -> LearnScreen()
+                        Destination.Learn -> LearnScreen { route = Destination.Devices.name }
+                        Destination.Devices -> DeviceReferenceScreen()
                         Destination.Editor -> EditorScreen()
                     }
                 }
             }
         }
+        }
+        if (displayOptions) AlertDialog(
+            onDismissRequest = { displayOptions = false }, title = { Text("View options") },
+            text = { Column(Modifier.verticalScroll(rememberScrollState())) {
+                DisplayToggle("Show header", showHeader) { showHeader = it; preferences.showHeader = it }
+                DisplayToggle("Show navigation", showNavigation) { showNavigation = it; preferences.showNavigation = it }
+                HorizontalDivider()
+                Destination.entries.filter { it != Destination.Editor && (it != Destination.Recent || documents.isNotEmpty()) }.forEach { item ->
+                    TextButton(onClick = {
+                        displayOptions = false
+                        if (item == Destination.Recent) scope.launch { drawer.open() } else route = item.name
+                    }, modifier = Modifier.fillMaxWidth()) { Text(item.label) }
+                }
+            } },
+            confirmButton = { TextButton(onClick = { displayOptions = false }) { Text("Done") } },
+        )
         if (creating) AlertDialog(
             onDismissRequest = { if (!saving) creating = false },
             icon = { BuilderGlyph(Glyph.Graph, MaterialTheme.colorScheme.primary) },
-            title = { Text("Name your mechanic") },
+            title = { Row(verticalAlignment = Alignment.CenterVertically) { Text("Name your mechanic", Modifier.weight(1f));
+                InformationButton("New mechanic", "A mechanic is a small system of devices working together. Name the idea you want to build. You can save a draft now; device placement and testing will be added later.") } },
             text = {
                 Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Text("A mechanic is a small system of devices working together. Start with the idea you want to build.")
                     OutlinedTextField(value = name, onValueChange = { if (!saving) name = it.take(80) },
                         label = { Text("Mechanic name") }, placeholder = { Text("e.g. Three-Key Vault") },
                         singleLine = true, enabled = !saving, modifier = Modifier.fillMaxWidth(),
@@ -162,10 +193,8 @@ private fun BrandHeader() {
         }
         Column(Modifier.weight(1f)) {
             Text("CREATIVE LOGIC", style = MaterialTheme.typography.titleMedium)
-            Text("Create something clever.", style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
-        BadgeLabel("PREVIEW")
+        InformationButton("Creative Logic", "Plan device mechanics for Creative and rebuild them by hand. Your work stays on this device. This version saves named drafts; device placement, testing and the build overlay are not available yet.")
     }
 }
 
@@ -178,82 +207,19 @@ private fun EditorHeader(name: String, onBack: () -> Unit) {
         }
         Column(Modifier.weight(1f).padding(horizontal = 8.dp)) {
             Text(name, style = MaterialTheme.typography.titleMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            Text("Saved on this device", style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
-        BadgeLabel("DRAFT")
+        InformationButton("Saved mechanic", "This draft is saved on this device. Device placement and bindings are not available yet.")
     }
 }
 
 @Composable
-private fun BadgeLabel(text: String) {
-    Surface(shape = CircleShape, color = MaterialTheme.colorScheme.secondaryContainer) {
-        Text(text, Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
-            style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSecondaryContainer)
-    }
-}
-
-@Composable
-private fun HomeScreen(documents: List<MechanicDocumentV1>, onNew: () -> Unit,
-    onOpen: (MechanicDocumentV1) -> Unit, onLibrary: () -> Unit, onLearn: () -> Unit) {
-    LazyColumn(Modifier.widthIn(max = 760.dp).fillMaxSize(), contentPadding = PaddingValues(24.dp),
-        verticalArrangement = Arrangement.spacedBy(20.dp)) {
-        item {
-            Surface(shape = MaterialTheme.shapes.extraLarge, color = MaterialTheme.colorScheme.surfaceContainer) {
-                Column(Modifier.background(Brush.linearGradient(listOf(
-                    MaterialTheme.colorScheme.secondaryContainer, MaterialTheme.colorScheme.surfaceContainer,
-                ))).padding(24.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                    Text("MADE FOR CREATIVE BUILDERS", style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.secondary)
-                    Text("Your next mechanic\nstarts with an idea.", style = MaterialTheme.typography.headlineLarge)
-                    Text("Plan device logic. Keep your settings together. Rebuild it by hand in Creative.",
-                        color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Button(onClick = onNew, modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp),
-                        shape = MaterialTheme.shapes.medium) {
-                        BuilderGlyph(Glyph.Add, MaterialTheme.colorScheme.onPrimary)
-                        Spacer(Modifier.width(8.dp)); Text("New Mechanic")
-                    }
-                }
-            }
+private fun HomeScreen(onNew: () -> Unit) {
+    Row(Modifier.widthIn(max = 760.dp).fillMaxWidth().padding(24.dp), verticalAlignment = Alignment.CenterVertically) {
+        Button(onClick = onNew, modifier = Modifier.weight(1f).heightIn(min = 52.dp)) {
+            BuilderGlyph(Glyph.Add, MaterialTheme.colorScheme.onPrimary)
+            Spacer(Modifier.width(8.dp)); Text("New Mechanic")
         }
-        item { PreviewNotice() }
-        item {
-            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                Text("Recent Mechanics", style = MaterialTheme.typography.titleLarge, modifier = Modifier.weight(1f))
-                TextButton(onClick = onLibrary) { Text("View all") }
-            }
-        }
-        if (documents.isEmpty()) item {
-            EmptyState("A home for your ideas", "Create your first draft and find it here whenever you’re ready to continue.", Glyph.Library)
-        } else items(documents.take(5), key = { it.mechanicMetadata.id }) { MechanicRow(it, onOpen) }
-        item {
-            OutlinedCard(onClick = onLearn, border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)) {
-                Row(Modifier.fillMaxWidth().padding(18.dp), verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-                    BuilderGlyph(Glyph.Learn, MaterialTheme.colorScheme.secondary)
-                    Column(Modifier.weight(1f)) {
-                        Text("New to device logic?", style = MaterialTheme.typography.titleMedium)
-                        Text("Start with events, functions and bindings.", color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            style = MaterialTheme.typography.bodySmall)
-                    }
-                    BuilderGlyph(Glyph.Arrow, MaterialTheme.colorScheme.onSurfaceVariant)
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun PreviewNotice() {
-    Surface(shape = MaterialTheme.shapes.medium, color = MaterialTheme.colorScheme.surfaceContainerLow) {
-        Row(Modifier.padding(16.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            BuilderGlyph(Glyph.Learn, MaterialTheme.colorScheme.secondary)
-            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text("Planning preview", style = MaterialTheme.typography.titleSmall)
-                Text("Save named drafts today. Device editing, simulation and the build overlay are coming next.",
-                    color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
-            }
-        }
+        InformationButton("New mechanic", "Start with a name for your idea. Your saved drafts will appear in Recent and Library. Device placement and testing are coming later.")
     }
 }
 
@@ -262,11 +228,10 @@ private fun LibraryScreen(documents: List<MechanicDocumentV1>, onNew: () -> Unit
     val keyboard = LocalSoftwareKeyboardController.current
     var query by rememberSaveable { mutableStateOf("") }
     val matching = remember(documents, query) { documents.filter { it.mechanicMetadata.name.contains(query.trim(), ignoreCase = true) } }
-    LazyColumn(Modifier.testTag("mechanic-library").widthIn(max = 760.dp).fillMaxSize(), contentPadding = PaddingValues(24.dp),
+    LazyColumn(Modifier.testTag("mechanic-library").widthIn(max = 760.dp).fillMaxSize(), contentPadding = PaddingValues(24.dp, 24.dp, 24.dp, 96.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)) {
         item {
             Text("Your mechanics", style = MaterialTheme.typography.headlineMedium)
-            Text("Ideas worth keeping, all on your device.", color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         item {
             OutlinedTextField(value = query, onValueChange = { query = it }, modifier = Modifier.fillMaxWidth(),
@@ -299,8 +264,6 @@ private fun MechanicRow(document: MechanicDocumentV1, onOpen: (MechanicDocumentV
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(document.mechanicMetadata.name, style = MaterialTheme.typography.titleMedium,
                     maxLines = 2, overflow = TextOverflow.Ellipsis)
-                Text("Draft · 0 devices · Not tested", color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    style = MaterialTheme.typography.bodySmall)
             }
             BuilderGlyph(Glyph.Arrow, MaterialTheme.colorScheme.onSurfaceVariant)
         }
@@ -313,38 +276,27 @@ private fun EmptyState(title: String, body: String, glyph: Glyph) {
         horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(10.dp)) {
         BuilderGlyph(glyph, MaterialTheme.colorScheme.secondary, Modifier.size(36.dp))
         Text(title, style = MaterialTheme.typography.titleMedium)
-        Text(body, color = MaterialTheme.colorScheme.onSurfaceVariant,
-            style = MaterialTheme.typography.bodyMedium, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+        InformationButton(title, body)
     }
 }
 
 @Composable
-private fun LearnScreen() {
-    LazyColumn(Modifier.testTag("learn-concepts").widthIn(max = 760.dp).fillMaxSize(), contentPadding = PaddingValues(24.dp),
+private fun LearnScreen(onDevices: () -> Unit) {
+    LazyColumn(Modifier.testTag("learn-concepts").widthIn(max = 760.dp).fillMaxSize(), contentPadding = PaddingValues(24.dp, 24.dp, 24.dp, 96.dp),
         verticalArrangement = Arrangement.spacedBy(18.dp)) {
-        item {
-            Text("Small devices.\nBig possibilities.", style = MaterialTheme.typography.headlineLarge)
-            Text("Device logic is a conversation: one device announces something, another responds.",
-                color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 8.dp))
-        }
-        item { ConceptCard("01", "Events", "Something happened.", "An event is a signal a device sends, such as a button being interacted with.") }
-        item { ConceptCard("02", "Functions", "Do something next.", "A function is an action a device can receive, such as disabling a barrier.") }
-        item { ConceptCard("03", "Bindings", "Connect the conversation.", "Direct Event Binding links a device’s event to another device’s function.") }
-        item { PreviewNotice() }
-        item { Text("The device reference and playable examples will appear as their behavior is verified.",
-            style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+        item { Text("Device logic", style = MaterialTheme.typography.headlineMedium) }
+        item { ConceptCard("Events", "An event is a signal a device sends, such as a button being interacted with.") }
+        item { ConceptCard("Functions", "A function is an action a device can receive, such as disabling a barrier.") }
+        item { ConceptCard("Bindings", "Direct Event Binding links a device’s event to another device’s function.") }
+        item { TextButton(onClick = onDevices) { Text("Device Reference") } }
     }
 }
 
 @Composable
-private fun ConceptCard(number: String, title: String, subtitle: String, body: String) {
-    Surface(shape = MaterialTheme.shapes.large, color = MaterialTheme.colorScheme.surfaceContainer) {
-        Column(Modifier.fillMaxWidth().padding(20.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text(number, color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelLarge)
-            Text(title, style = MaterialTheme.typography.titleLarge)
-            Text(subtitle, color = MaterialTheme.colorScheme.secondary, style = MaterialTheme.typography.titleSmall)
-            Text(body, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        }
+private fun ConceptCard(title: String, body: String) {
+    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+        Text(title, Modifier.weight(1f), style = MaterialTheme.typography.titleLarge)
+        InformationButton(title, body)
     }
 }
 
@@ -369,13 +321,9 @@ private fun EditorScreen() {
                     verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     BuilderGlyph(Glyph.Graph, MaterialTheme.colorScheme.primary, Modifier.size(40.dp))
                     Text("Logic canvas", style = MaterialTheme.typography.titleLarge)
-                    Text("Your idea has a place to grow.", style = MaterialTheme.typography.titleSmall)
-                    Text("Device placement and connections are coming next. For now, your named draft is saved and ready for later.",
-                        color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+                    InformationButton("Logic canvas", "Your named draft is saved. Device placement, connections and simulation are not available in this version.")
                 }
             }
         }
-        Text("Draft saved locally · Device tools coming soon", style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.align(Alignment.CenterHorizontally))
     }
 }

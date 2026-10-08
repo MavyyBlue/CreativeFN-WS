@@ -52,3 +52,7 @@ Use the [mobile delivery guide](docs/MOBILE_DELIVERY.md): install the two workfl
 files once, upload the source ZIP at repository root, then extract the APK from the
 successful Android run’s GitHub Actions artifact. A workspace path or temporary
 external APK URL is not the supported mobile distribution flow.
+
+Phase 1 candidate adds typed reference-only Trigger/Tracker/Barrier definitions.
+Home, contextual information, hideable bars and the Recent sidebar keep planning
+controls compact. Device placement and simulation are not yet implemented.

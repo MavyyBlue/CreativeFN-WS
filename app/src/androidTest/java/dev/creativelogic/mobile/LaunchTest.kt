@@ -11,7 +11,6 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.performImeAction
 import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performClick
-import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
 import org.junit.Rule
 import org.junit.Test
@@ -22,7 +21,7 @@ class LaunchTest {
 
     @Test fun homeExplainsTheCurrentBuild() {
         compose.onNodeWithText("CREATIVE LOGIC").assertIsDisplayed()
-        compose.onNodeWithText("New Mechanic").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("New Mechanic").assertIsDisplayed()
         compose.onNodeWithText("Home").assertIsDisplayed()
         compose.onNodeWithText("Library").assertIsDisplayed()
         compose.onNodeWithText("Learn").assertIsDisplayed()
@@ -30,7 +29,7 @@ class LaunchTest {
 
     @Test fun namedDraftPersistsThroughEditorAndLibrarySearch() {
         val draftName = "Vault UX ${UUID.randomUUID().toString().take(8)}"
-        compose.onNodeWithText("New Mechanic").performScrollTo().performClick()
+        compose.onNodeWithText("New Mechanic").performClick()
         compose.onNodeWithText("Create draft").assertIsNotEnabled()
         compose.onNodeWithText("Mechanic name").performTextInput(draftName)
         compose.onNodeWithText("Create draft").performClick()
@@ -50,7 +49,7 @@ class LaunchTest {
     }
 
     @Test fun draftNameSurvivesActivityRecreation() {
-        compose.onNodeWithText("New Mechanic").performScrollTo().performClick()
+        compose.onNodeWithText("New Mechanic").performClick()
         compose.onNodeWithText("Mechanic name").performTextInput("Persistent idea")
         compose.activityRule.scenario.recreate()
         compose.onNodeWithText("Persistent idea").assertIsDisplayed()

@@ -4,8 +4,8 @@ Phases advance only after implementation/tests and green GitHub Actions evidence
 
 | Phase | Scope | Status |
 | --- | --- | --- |
-| 0 | Android foundation, storage wiring, tests, CI, docs | Baseline green/installed; UX smoke repair pending new CI |
-| 1 | Versioned typed catalog: Trigger, Tracker, Barrier | Not started |
+| 0 | Android foundation, storage wiring, tests, CI, docs | Green/installed; player-facing UX refinement pending new CI |
+| 1 | Versioned typed catalog: Trigger, Tracker, Barrier | Implemented candidate; reference verification and green CI pending |
 | 2 | Touch graph, semantic ports, undo/redo, autosave | Not started |
 | 3 | Deterministic simulator, trace, stepping, golden vault | Not started |
 | 4 | Expand twelve MVP devices one at a time with tests | Not started |
@@ -16,8 +16,8 @@ Phases advance only after implementation/tests and green GitHub Actions evidence
 | 9 | Profiling, process recreation, mobile polish | Not started |
 
 Phase 0 is a shell and not a static diagramming substitute for the intended product.
-Next task: validate the library matcher/Learn lazy-scroll smoke repair, deliver through the existing
-source importer, obtain new green CI, then proceed to Phase 1.
+Next task: validate player UX and the Phase 1 catalog candidate through the existing
+source importer and Android CI; verify reference subsets before phase completion.
 Device fidelity evidence is required before advertising simulation support.
 
 Deferred beyond MVP: cloud/community sharing, collaboration, ratings, comments,

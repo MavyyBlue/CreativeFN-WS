@@ -50,3 +50,15 @@ Foundation remains locally validated, pending remote CI and emulator acceptance.
 - Library Search keyboard action dismisses the keyboard.
 - Full local Gradle checks, strict lint, debug/test APK builds and importer tests
   pass. New green CI remains required; no workflow checks were disabled.
+
+
+## 0.0.3 — Player controls and Phase 1 catalog candidate (2026-10-08)
+
+- Green UX baseline: Android run 37705777016 on 611434a; owner installed/launched.
+- Simplified Home to New Mechanic; moved explanations into contextual popups.
+- Persistent header/navigation visibility and always-reachable View options.
+- Conditional Recent destination with searchable scrolling sidebar.
+- Typed versioned JVM catalog for Trigger, Tracker and Barrier with explicit DTOs,
+  option/port validation, six unit tests and catalog-driven Reference UI.
+- All devices remain Reference Only; simulation and graph placement are pending.
+- Added player interaction coverage; candidate CI/phone acceptance remains pending.

@@ -8,15 +8,15 @@ stops consuming database updates when the UI is inactive. Coroutine writes run
 through a constructor-injected repository; Room rejects main-thread database I/O.
 The application owns a lazily constructed Room database. There is no DI framework.
 
-Dependency direction: `app → core-model`, `app → simulation-engine → core-model`.
-Both JVM modules use no Android or Compose classes. The simulator module currently
+Dependency direction: `app → device-catalog → core-model; app → core-model`, `app → simulation-engine → core-model`.
+All JVM modules use no Android or Compose classes. The simulator module currently
 advertises unavailability only; it contains no runtime behavior.
 
 | Logical boundary | Initial location | Status |
 | --- | --- | --- |
 | app | app module | activity, navigation, theme, composition root |
-| core-model | core-model module | repository interface, explicit empty-document DTO |
-| device-catalog | app / devicecatalog | reserved; Phase 1 |
+| core-model | core-model module | repository, empty-document DTO, typed device domain |
+| device-catalog | device-catalog JVM module | typed versioned reference definitions and instance codec |
 | graph-engine | app / graphengine | reserved; Phase 2, extract pure graph operations |
 | simulation-engine | simulation-engine module | reserved; runtime in Phase 3 |
 | mechanic-storage | app / mechanicstorage | Room schema 1, JSON adapter |
@@ -53,3 +53,13 @@ transitions; there are no infinite animation clocks. Named draft creation uses t
 existing repository, with synchronous input validation and explicit asynchronous
 feedback. Library search is local presentation filtering of the observed drafts.
 All empty-graph restrictions and Android-free simulation boundaries remain intact.
+
+## Player presentation controls
+
+DisplayPreferences persists header/navigation flags in private SharedPreferences.
+View options always remains reachable when both bars are hidden. Contextual
+InformationButton uses a dismissible anchored popup, with explanatory text absent
+until requested. ModalNavigationDrawer owns Recent search/scroll/selection; the
+Recent destination is offered only after observed saved data is nonempty. No
+recent cards are rendered on Home. Catalog reference screens use the same typed
+definitions tested on the JVM. Only brief support badges remain inline.

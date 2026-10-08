@@ -11,6 +11,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         val repository = (application as CreativeLogicApplication).repository
-        setContent { CreativeLogicApp(repository) }
+        val displayPreferences = dev.creativelogic.mobile.ui.DisplayPreferences(this)
+        setContent { CreativeLogicApp(repository, displayPreferences) }
     }
 }

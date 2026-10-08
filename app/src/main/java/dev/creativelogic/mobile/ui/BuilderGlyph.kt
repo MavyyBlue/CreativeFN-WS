@@ -15,7 +15,7 @@ import androidx.compose.ui.graphics.drawscope.scale
 import androidx.compose.ui.unit.dp
 
 /** Small, local stroke icons; adjacent text/buttons supply accessible names. */
-enum class Glyph { Home, Library, Learn, Add, Arrow, Back, Search, Graph }
+enum class Glyph { Home, Library, Learn, Add, Arrow, Back, Search, Graph, Menu, Recent }
 
 @Composable
 fun BuilderGlyph(glyph: Glyph, color: Color, modifier: Modifier = Modifier) {
@@ -24,6 +24,11 @@ fun BuilderGlyph(glyph: Glyph, color: Color, modifier: Modifier = Modifier) {
             fun line(x: Float, y: Float, toX: Float, toY: Float) =
                 drawLine(color, Offset(x, y), Offset(toX, toY), 1.8f, StrokeCap.Round)
             when (glyph) {
+                Glyph.Recent -> {
+                    drawCircle(color, 8f, Offset(12f, 12f), style = Stroke(1.8f))
+                    line(12f, 7f, 12f, 12f); line(12f, 12f, 16f, 14f)
+                }
+                Glyph.Menu -> { line(4f, 6f, 20f, 6f); line(4f, 12f, 20f, 12f); line(4f, 18f, 20f, 18f) }
                 Glyph.Add -> { line(12f, 5f, 12f, 19f); line(5f, 12f, 19f, 12f) }
                 Glyph.Arrow -> { line(9f, 6f, 15f, 12f); line(15f, 12f, 9f, 18f) }
                 Glyph.Back -> { line(15f, 6f, 9f, 12f); line(9f, 12f, 15f, 18f) }

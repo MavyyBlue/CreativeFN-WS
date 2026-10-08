@@ -11,8 +11,8 @@ android {
         applicationId = "dev.creativelogic.mobile"
         minSdk = 29
         targetSdk = 37
-        versionCode = 2
-        versionName = "0.0.2"
+        versionCode = 3
+        versionName = "0.0.3"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
     buildFeatures { compose = true; buildConfig = true }
@@ -34,6 +34,7 @@ kotlin {
 ksp { arg("room.schemaLocation", "$projectDir/schemas") }
 dependencies {
     implementation(project(":core-model"))
+    implementation(project(":device-catalog"))
     implementation(project(":simulation-engine"))
     implementation(platform(libs.compose.bom))
     implementation(libs.compose.material3)
