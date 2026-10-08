@@ -40,3 +40,13 @@ Foundation remains locally validated, pending remote CI and emulator acceptance.
 - New UI acceptance coverage; full local Gradle tests/lint/APK checks passed.
 - Baseline 8805c77 / Android run 37697700991 passed and owner installed/launched.
   The new UX candidate requires its own CI and phone acceptance.
+
+
+## UX launch-smoke repair — 2026-10-07
+
+- Diagnosed run 37702966712: build passed; 3/5 Android tests passed.
+- Library tests distinguish saved cards from editable search text.
+- Learn/Library tests scroll lazy lists directly and keep visibility assertions.
+- Library Search keyboard action dismisses the keyboard.
+- Full local Gradle checks, strict lint, debug/test APK builds and importer tests
+  pass. New green CI remains required; no workflow checks were disabled.

@@ -1,11 +1,16 @@
 # Current state
 
-Current phase: **Phase 0 foundation accepted; UX polish candidate in validation**.
+Current phase: **Phase 0 foundation accepted; UX smoke-test repair in validation**.
 The owner installed/launched the CI APK and requested a beginner-friendly redesign.
 
 Baseline: `8805c77fee37b84d13e5e263ca6574f911c06201` on main.
 Latest validated GitHub Actions run: [37697700991](https://github.com/MavyyBlue/CreativeFN-WS/actions/runs/37697700991), success (build and API 29 smoke).
-This green baseline does not validate the new UX source until it is imported/built.
+Latest UX CI: [37702966712](https://github.com/MavyyBlue/CreativeFN-WS/actions/runs/37702966712),
+source `6749da9d21b4232cb40baf4dfb9006a96560bfa2`: build passed; launch-smoke failed
+2 of 5 instrumentation tests. Home, activity recreation and storage reopen passed.
+Library failed on an ambiguous text matcher (search field and card both matched).
+Learn failed because child scrolling did not expose the Bindings heading.
+The green foundation baseline does not validate this UX candidate.
 
 Implemented foundation: native Kotlin/Compose, API 29 minimum and API 37 target,
 Room empty-draft persistence, explicit JSON DTO, constructor injection, JVM model
@@ -32,7 +37,15 @@ visually checked on API 29 at 480×854; launch succeeded. Landscape/large-font
 and interaction acceptance remain pending CI/phone checks.
 Physical UX/transition performance acceptance remains the owner's phone check.
 
-Next task: import the UX source ZIP and obtain
+Repair: lazy-list-aware semantic scrolling for Learn and Library; result matching
+excludes editable fields. All original display/navigation assertions remain. Library
+Search IME now dismisses the keyboard. Full local check/lint/debug and test APK
+assembly passed; 11 importer tests and workflow syntax validation passed.
+Local repaired UI installation timed out after 240 seconds while the
+unaccelerated emulator compiled the test APK. No repaired UI pass or new green
+CI is claimed; the uploaded source must run the unchanged launch-smoke job.
+
+Next task: import the repaired source ZIP and obtain
 new green Android CI through the existing importer. Then Phase 1 typed catalog
 for Trigger, Tracker and Barrier. The GitHub write integration previously returned
 403; browser source upload remains the proven delivery path.

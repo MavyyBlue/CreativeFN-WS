@@ -97,3 +97,20 @@ that the candidate UI tests pass. Lowering emulator resolution allowed a rendere
 portrait home-screen inspection (API 29, 480×854): readable hero/CTA/preview and
 three navigation destinations, with no overlap. Property-fetch timeouts remained
 on retry. Run interaction tests in Android CI and check on a phone.
+
+
+## UX smoke repair
+
+CI 37702966712 on 6749da9 passed the build job and executed all 5 Android
+instrumentation tests. Three passed. Library selection matched both the editable
+search field and the mechanic card. Learn's child `performScrollTo` left Bindings
+out of view. Repaired tests scroll the tagged LazyColumn with `performScrollToNode`,
+then retain `assertIsDisplayed` for each concept/result. Card selection excludes
+`hasSetTextAction`, making the result independent of the search input's value.
+Search IME hides the keyboard before scrolling and opening the saved draft.
+
+Full local Gradle check/lintDebug/app and test APK assembly passed after repair.
+All 5 JVM tests and 11 importer tests passed; both workflows pass actionlint.
+Local test-APK installation on the unaccelerated API 29 emulator exceeded
+240 seconds during dex compilation. No repaired UI pass is claimed.
+Instrumentation and new green CI must be recorded separately when executed.

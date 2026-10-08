@@ -24,6 +24,7 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
@@ -258,9 +259,10 @@ private fun PreviewNotice() {
 
 @Composable
 private fun LibraryScreen(documents: List<MechanicDocumentV1>, onNew: () -> Unit, onOpen: (MechanicDocumentV1) -> Unit) {
+    val keyboard = LocalSoftwareKeyboardController.current
     var query by rememberSaveable { mutableStateOf("") }
     val matching = remember(documents, query) { documents.filter { it.mechanicMetadata.name.contains(query.trim(), ignoreCase = true) } }
-    LazyColumn(Modifier.widthIn(max = 760.dp).fillMaxSize(), contentPadding = PaddingValues(24.dp),
+    LazyColumn(Modifier.testTag("mechanic-library").widthIn(max = 760.dp).fillMaxSize(), contentPadding = PaddingValues(24.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)) {
         item {
             Text("Your mechanics", style = MaterialTheme.typography.headlineMedium)
@@ -269,6 +271,8 @@ private fun LibraryScreen(documents: List<MechanicDocumentV1>, onNew: () -> Unit
         item {
             OutlinedTextField(value = query, onValueChange = { query = it }, modifier = Modifier.fillMaxWidth(),
                 label = { Text("Search mechanics") }, singleLine = true,
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+                keyboardActions = KeyboardActions(onSearch = { keyboard?.hide() }),
                 leadingIcon = { BuilderGlyph(Glyph.Search, MaterialTheme.colorScheme.onSurfaceVariant) })
         }
         item {
@@ -316,7 +320,7 @@ private fun EmptyState(title: String, body: String, glyph: Glyph) {
 
 @Composable
 private fun LearnScreen() {
-    LazyColumn(Modifier.widthIn(max = 760.dp).fillMaxSize(), contentPadding = PaddingValues(24.dp),
+    LazyColumn(Modifier.testTag("learn-concepts").widthIn(max = 760.dp).fillMaxSize(), contentPadding = PaddingValues(24.dp),
         verticalArrangement = Arrangement.spacedBy(18.dp)) {
         item {
             Text("Small devices.\nBig possibilities.", style = MaterialTheme.typography.headlineLarge)
