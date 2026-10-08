@@ -134,3 +134,17 @@ Final candidate: 11 JVM tests, strict lint, app/test APK builds, APK signature
 verification and 11 importer tests passed. Local API 29 software-emulator install
 exceeded 300 seconds; Android System UI showed an unresponsive-system dialog.
 Rendered-app and updated interaction checks remain pending; no UI pass is claimed.
+
+
+## Closed-sidebar selector repair — 2026-10-08
+
+Run 37725293030 on 9f8aac4: build passed, 8/9 Android tests passed. Popup,
+bar hide/restore/recreation, sidebar selection and device-reference tests all
+passed. Draft reopening failed because its name occurs in both the editor
+header and retained offscreen drawer content. The editor title now has a stable
+semantic tag, and Library/Recent result matchers require the corresponding
+list ancestor. Text equality, visibility and navigation assertions are retained;
+editor title is checked again after reopening from Library. New CI is required.
+
+Post-repair local full Gradle check/lintDebug/app and test APK assembly passed,
+along with 11 JVM tests, 11 importer tests and workflow syntax validation.

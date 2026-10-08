@@ -49,7 +49,8 @@ class PlayerExperienceTest {
         compose.onNodeWithText("Recent").performClick()
         compose.onNodeWithText("Recent mechanics").assertIsDisplayed()
         compose.onNodeWithText("Find recent mechanic").performTextInput(name)
-        val result = hasText(name) and !hasSetTextAction()
+        val result = hasText(name) and !hasSetTextAction() and
+            hasAnyAncestor(hasTestTag("recent-mechanics"))
         compose.onNodeWithTag("recent-mechanics").performScrollToNode(result)
         compose.onNode(result).performClick()
         compose.onNodeWithText("Logic canvas").assertIsDisplayed()

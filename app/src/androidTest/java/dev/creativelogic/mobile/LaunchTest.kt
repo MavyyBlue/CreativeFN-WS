@@ -1,5 +1,8 @@
 package dev.creativelogic.mobile
 
+import androidx.compose.ui.test.assertTextEquals
+import androidx.compose.ui.test.hasAnyAncestor
+import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.hasSetTextAction
@@ -37,15 +40,17 @@ class LaunchTest {
             compose.onAllNodes(hasText("Logic canvas")).fetchSemanticsNodes().isNotEmpty()
         }
         compose.onNodeWithText("Logic canvas").assertIsDisplayed()
-        compose.onNodeWithText(draftName).assertIsDisplayed()
+        compose.onNodeWithTag("editor-title").assertTextEquals(draftName).assertIsDisplayed()
         compose.onNodeWithContentDescription("Back to home").performClick()
         compose.onNodeWithText("Library").performClick()
         compose.onNodeWithText("Search mechanics").performTextInput(draftName)
         compose.onNodeWithText("Search mechanics").performImeAction()
-        val resultCard = hasText(draftName) and !hasSetTextAction()
+        val resultCard = hasText(draftName) and !hasSetTextAction() and
+            hasAnyAncestor(hasTestTag("mechanic-library"))
         compose.onNodeWithTag("mechanic-library").performScrollToNode(resultCard)
         compose.onNode(resultCard).assertIsDisplayed().performClick()
         compose.onNodeWithText("Logic canvas").assertIsDisplayed()
+        compose.onNodeWithTag("editor-title").assertTextEquals(draftName).assertIsDisplayed()
     }
 
     @Test fun draftNameSurvivesActivityRecreation() {

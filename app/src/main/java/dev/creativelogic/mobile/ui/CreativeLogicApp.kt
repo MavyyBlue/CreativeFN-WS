@@ -206,7 +206,7 @@ private fun EditorHeader(name: String, onBack: () -> Unit) {
             BuilderGlyph(Glyph.Back, MaterialTheme.colorScheme.onSurface)
         }
         Column(Modifier.weight(1f).padding(horizontal = 8.dp)) {
-            Text(name, style = MaterialTheme.typography.titleMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(name, modifier = Modifier.testTag("editor-title"), style = MaterialTheme.typography.titleMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
         }
         InformationButton("Saved mechanic", "This draft is saved on this device. Device placement and bindings are not available yet.")
     }

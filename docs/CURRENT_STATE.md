@@ -6,7 +6,14 @@ Latest fully validated commit: `611434a97673acc8e21905dbb48eac4597d0e429`.
 Latest validated Android CI: [37705777016](https://github.com/MavyyBlue/CreativeFN-WS/actions/runs/37705777016), success, including the repaired smoke tests.
 Owner installed/launched that APK and accepted its visual direction, then requested
 less explanatory clutter, controllable bars and a separate Recent sidebar.
-The new candidate needs its own green CI and phone acceptance.
+Latest candidate run: [37725293030](https://github.com/MavyyBlue/CreativeFN-WS/actions/runs/37725293030)
+on `9f8aac4`: build passed; 8 of 9 Android tests passed. All four player-control
+tests passed. One draft/search test matched both the editor title and hidden
+Recent item. Repair tags the editor title and scopes list-result matchers to their
+respective Library/Recent containers, retaining all display/navigation checks.
+Post-repair full local Gradle check, lintDebug, app/test APK assembly, all 11 JVM
+tests and 11 importer tests passed. Both workflows passed actionlint.
+The repair needs a new green CI run; no post-repair Android pass is claimed.
 
 Implemented foundation: Kotlin/Compose API 29–37, named drafts persisted with
 Room/explicit JSON DTO, Android-free model/simulator boundaries, source importer,

@@ -4,7 +4,7 @@ Phases advance only after implementation/tests and green GitHub Actions evidence
 
 | Phase | Scope | Status |
 | --- | --- | --- |
-| 0 | Android foundation, storage wiring, tests, CI, docs | Green/installed; player-facing UX refinement pending new CI |
+| 0 | Android foundation, storage wiring, tests, CI, docs | 8/9 candidate Android tests passed; scoped-selector repair pending CI |
 | 1 | Versioned typed catalog: Trigger, Tracker, Barrier | Implemented candidate; reference verification and green CI pending |
 | 2 | Touch graph, semantic ports, undo/redo, autosave | Not started |
 | 3 | Deterministic simulator, trace, stepping, golden vault | Not started |

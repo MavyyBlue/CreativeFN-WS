@@ -62,3 +62,12 @@ Foundation remains locally validated, pending remote CI and emulator acceptance.
   option/port validation, six unit tests and catalog-driven Reference UI.
 - All devices remain Reference Only; simulation and graph placement are pending.
 - Added player interaction coverage; candidate CI/phone acceptance remains pending.
+
+
+## Player smoke selector repair — 2026-10-08
+
+- Diagnosed 37725293030: 8/9 Android tests passed; all new player controls passed.
+- Target editor title by semantic tag and results by their Library/Recent
+  container, avoiding duplicate names retained in a closed sidebar.
+- Keep visibility checks and assert reopened editor title matches the draft.
+- No workflow checks disabled; new green CI remains pending.
