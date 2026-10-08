@@ -176,3 +176,22 @@ verify state; hide bars and restore with View options. Test landscape, large fon
 and long names. Dismissing settings discards uncommitted fields; Done applies them.
 Measure 50/100 nodes and 200 connections before claiming rendering targets.
 Simulation behavior must not be inferred from this editor milestone.
+
+
+## Phase 2 save-control smoke repair — 2026-10-08
+
+Run 37792525064 on e2e6e6808433890d4559d8f2e4ff6eafe194d62d passed the build
+job and 9/10 Android tests, including all launch/player controls and populated Room
+durability. The graph test reached both bindings and successful undo/redo checks,
+then timed out at GraphExperienceTest.kt:53. It queried the child graph-save tag
+in the merged semantics tree. TextButton merges its label's text into the parent,
+whose graph-save-button tag takes precedence. The test now queries that stable
+button plus Saved, then asserts its text and visibility. The redundant child tag
+is removed. The pinned Compose UI 1.9.0 TestTag merge policy was inspected and returns the
+parent tag, confirming why the child tag disappears. Timeout is unchanged; no
+save/recreation/reopen assertions are dropped.
+Full repaired instrumented execution requires new CI/device evidence.
+
+Post-repair local full Gradle check/lintDebug/app and test APK assembly passed;
+24 JVM tests, 11 importer tests, workflow syntax and APK signature checks passed.
+Repaired Android execution remains pending a new CI run.

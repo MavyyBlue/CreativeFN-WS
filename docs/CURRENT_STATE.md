@@ -35,8 +35,13 @@ Local validation (2026-10-08): full Gradle check, strict lintDebug, debug app an
 instrumentation APK assembly passed; 24 JVM tests and 11 Python importer tests
 passed. Both unchanged workflows pass actionlint. Ten Android tests compile,
 including a new configure/connect/undo/reopen flow and populated Room durability.
-New instrumented execution remains pending CI/device; baseline's nine passing
-Android tests do not establish candidate execution. Local software-emulator
+Candidate run [37792525064](https://github.com/MavyyBlue/CreativeFN-WS/actions/runs/37792525064)
+on `e2e6e6808433890d4559d8f2e4ff6eafe194d62d`: build passed, 9/10 Android
+tests passed. Graph interaction progressed through configuration/bindings/undo/redo
+but timed out matching the child graph-save tag. TextButton merges its label into
+the parent; the repaired selector targets graph-save-button plus Saved and retains
+visibility, recreation/reopen, binding-count and persisted-setting assertions.
+No repaired Android pass is claimed; new CI remains required. Local software-emulator
 installation previously timed out without hardware acceleration; no candidate
 phone/performance results are claimed.
 
@@ -53,3 +58,7 @@ Android CI and verify touch/persistence on a phone. Fix observed Phase 2 failure
 before advancing to Phase 3's deterministic runtime/golden Three-Key Vault.
 Reference fidelity verification remains open. GitHub write integration previously
 returned 403; the owner's browser upload remains the proven delivery path.
+
+Post-repair local full Gradle check/lintDebug/app and test APK assembly passed;
+24 JVM tests, 11 importer tests, workflow syntax and APK signature checks passed.
+Repaired Android execution remains pending a new CI run.

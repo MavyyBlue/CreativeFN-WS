@@ -6,7 +6,7 @@ Phases advance only after implementation/tests and green GitHub Actions evidence
 | --- | --- | --- |
 | 0 | Android foundation, storage wiring, tests, CI, docs | Validated baseline f305c5d / Android run 37726479431; owner phone acceptance |
 | 1 | Versioned typed catalog: Trigger, Tracker, Barrier | Catalog foundation validated in baseline; Fortnite reference verification open |
-| 2 | Touch graph, semantic ports, undo/redo, autosave | Implemented candidate; local checks pass, new CI/phone acceptance pending |
+| 2 | Touch graph, semantic ports, undo/redo, autosave | 9/10 candidate Android tests passed; save-button selector repair pending CI/phone acceptance |
 | 3 | Deterministic simulator, trace, stepping, golden vault | Not started |
 | 4 | Expand twelve MVP devices one at a time with tests | Not started |
 | 5 | Validation and debugging UX | Not started |

@@ -72,7 +72,7 @@ private fun GraphEditorContent(session: GraphDraftSession) {
             TextButton(onClick = { palette = true }, modifier = Modifier.testTag("graph-devices")) { Text("Devices") }
             TextButton(onClick = { bindings = true }, modifier = Modifier.testTag("graph-bindings")) { Text("Bindings") }
             TextButton(onClick = { scope.launch { session.saveLatest() } }, modifier = Modifier.testTag("graph-save-button")) {
-                Text(when (status) { GraphSaveStatus.SAVED -> "Saved"; GraphSaveStatus.SAVING -> "Saving…"; else -> "Save" }, Modifier.testTag("graph-save"))
+                Text(when (status) { GraphSaveStatus.SAVED -> "Saved"; GraphSaveStatus.SAVING -> "Saving…"; else -> "Save" })
             }
         }
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {

@@ -50,7 +50,12 @@ class GraphExperienceTest {
         compose.onNodeWithTag("graph-redo").performClick()
         compose.onNodeWithTag("logic-canvas").assert(hasStateDescription("3 devices, 2 bindings"))
         compose.onNodeWithTag("graph-save-button").performClick()
-        compose.waitUntil(10_000) { compose.onAllNodes(hasTestTag("graph-save") and hasText("Saved")).fetchSemanticsNodes().isNotEmpty() }
+        // TextButton merges its label into the button's semantics. Match that
+        // stable control rather than a child tag hidden in the merged tree.
+        compose.waitUntil(10_000) {
+            compose.onAllNodes(hasTestTag("graph-save-button") and hasText("Saved")).fetchSemanticsNodes().isNotEmpty()
+        }
+        compose.onNodeWithTag("graph-save-button").assertTextEquals("Saved").assertIsDisplayed()
         compose.activityRule.scenario.recreate()
         waitForGraph()
         compose.onNodeWithTag("logic-canvas").assert(hasStateDescription("3 devices, 2 bindings"))

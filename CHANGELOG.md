@@ -86,3 +86,16 @@ Foundation remains locally validated, pending remote CI and emulator acceptance.
   coverage. Local full checks/lint/debug app and test APK builds pass; 24 JVM and
   11 importer tests pass. New Android CI/phone acceptance remains pending.
 - Trigger/Tracker/Barrier remain Reference Only; simulation is next, not implemented.
+
+
+## Phase 2 launch-smoke selector repair — 2026-10-08
+
+- Diagnosed run 37792525064: build passed, 9/10 Android tests passed; graph test
+  timed out looking for the Saved label's hidden child tag after binding/undo/redo.
+- Target the merged save button semantics; retain Saved text/visibility checks,
+  recreation, Library reopen, binding counts and persisted Tracker value.
+- No workflow or device behavior changes. New green Android CI remains required.
+
+Post-repair local full Gradle check/lintDebug/app and test APK assembly passed;
+24 JVM tests, 11 importer tests, workflow syntax and APK signature checks passed.
+Repaired Android execution remains pending a new CI run.
