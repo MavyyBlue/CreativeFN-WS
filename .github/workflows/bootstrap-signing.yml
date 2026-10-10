@@ -5,6 +5,7 @@ on:
 
 permissions:
   contents: read
+  actions: read
 
 concurrency:
   group: creative-logic-signing-bootstrap
@@ -12,6 +13,7 @@ concurrency:
 
 jobs:
   create-encrypted-keystore:
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -19,6 +21,38 @@ jobs:
         uses: actions/checkout@v4
         with:
           persist-credentials: false
+
+      - name: Guard against accidental key regeneration
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json
+          import os
+          from urllib.request import Request, urlopen
+
+          if os.environ['GITHUB_RUN_ATTEMPT'] != '1':
+              raise SystemExit('Refusing to regenerate the signing key during a job rerun.')
+
+          repo = os.environ['GITHUB_REPOSITORY']
+          run_id = int(os.environ['GITHUB_RUN_ID'])
+          url = (f'https://api.github.com/repos/{repo}/actions/workflows/'
+                 'bootstrap-signing.yml/runs?per_page=100')
+          request = Request(url, headers={
+              'Authorization': f"Bearer {os.environ['GH_TOKEN']}",
+              'Accept': 'application/vnd.github+json',
+              'X-GitHub-Api-Version': '2022-11-28',
+          })
+          with urlopen(request, timeout=20) as response:
+              runs = json.load(response)['workflow_runs']
+
+          if any(run['id'] != run_id and run.get('conclusion') == 'success'
+                 for run in runs):
+              raise SystemExit('Signing bootstrap previously succeeded: refusing to make another key.')
+          print('No previous successful signing bootstrap found.')
+          PY
 
       - name: Set up Java 21
         uses: actions/setup-java@v4
@@ -35,12 +69,12 @@ jobs:
           set -euo pipefail
           umask 077
 
-          if [[ -f ".github/signing/creative-logic-release.p12.enc" ]]; then
-            echo "An encrypted signing key is already recorded. Refusing to generate another."
+          if [[ -f '.github/signing/creative-logic-release.p12.enc' ]]; then
+            echo 'Signing key already recorded. Refusing to generate another.'
             exit 1
           fi
           if (( ${#KEYSTORE_PASSWORD} < 24 || ${#BACKUP_PASSPHRASE} < 32 )); then
-            echo "Signing or backup secret is missing or shorter than required."
+            echo 'Signing or backup secret is missing or shorter than required.'
             exit 1
           fi
 
@@ -51,7 +85,7 @@ jobs:
           keytool -genkeypair -noprompt \
             -alias creative-logic-release \
             -keyalg RSA -keysize 4096 -validity 10000 \
-            -dname "CN=Creative Logic Mobile, O=Creative Logic Mobile, C=US" \
+            -dname 'CN=Creative Logic Mobile, O=Creative Logic Mobile, C=US' \
             -storetype PKCS12 \
             -keystore "$work/creative-logic-release.p12" \
             -storepass:env KEYSTORE_PASSWORD \
@@ -62,14 +96,12 @@ jobs:
             -out "$out/creative-logic-release.p12.enc" \
             -pass env:BACKUP_PASSPHRASE
 
-          # Verify recovery before uploading. Decrypted bytes stay on the runner.
           openssl enc -d -aes-256-cbc -pbkdf2 -iter 600000 \
             -in "$out/creative-logic-release.p12.enc" \
             -out "$work/recovered.p12" \
             -pass env:BACKUP_PASSPHRASE
           cmp -s "$work/creative-logic-release.p12" "$work/recovered.p12"
 
-          # Only public certificate data and encrypted bytes become artifacts.
           keytool -exportcert -rfc -alias creative-logic-release \
             -keystore "$work/recovered.p12" -storetype PKCS12 \
             -storepass:env KEYSTORE_PASSWORD \
@@ -78,9 +110,9 @@ jobs:
             -noout -fingerprint -sha256 > "$out/CERTIFICATE-SHA256.txt"
           (cd "$out" && sha256sum creative-logic-release.p12.enc > ENCRYPTED-SHA256.txt)
 
-          echo "Encrypted keystore created and recovery tested." >> "$GITHUB_STEP_SUMMARY"
-          echo "Only the encrypted .p12.enc file, its checksum, and PUBLIC certificate information were uploaded." >> "$GITHUB_STEP_SUMMARY"
-          echo "Download and preserve the encrypted backup before using this key for builds." >> "$GITHUB_STEP_SUMMARY"
+          echo 'Encrypted keystore created and recovery tested.' >> "$GITHUB_STEP_SUMMARY"
+          echo 'Only encrypted bytes and public certificate details are uploaded.' >> "$GITHUB_STEP_SUMMARY"
+          echo 'Download the backup, keep both passwords, and preserve an independent copy.' >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upload encrypted backup only
         uses: actions/upload-artifact@v4
