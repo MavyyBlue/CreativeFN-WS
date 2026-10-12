@@ -99,3 +99,23 @@ Foundation remains locally validated, pending remote CI and emulator acceptance.
 Post-repair local full Gradle check/lintDebug/app and test APK assembly passed;
 24 JVM tests, 11 importer tests, workflow syntax and APK signature checks passed.
 Repaired Android execution remains pending a new CI run.
+
+
+## Phase 2 CI baseline reconciled — 2026-10-12
+
+- `main` HEAD 105ce159; Android Actions 38311622832 green in both build and
+  emulator jobs. Supersedes the older pending-CI status for Phase 2; real-phone
+  graph gestures/persistence acceptance remains separate.
+
+## Phase 3.1 — experimental deterministic runtime core candidate (2026-10-12)
+
+- Pure JVM PrototypeSimulationSession: typed Trigger/Tracker/Barrier runtime states,
+  virtual clock, ordered event/function dispatch, trace and manual inputs.
+- Pause, one-action stepping, resume/drain, reset, cooldown and one-use guards;
+  session, tick, depth and pending-queue limits halt feedback loops with traces.
+- Explicitly reject unmodeled tracker sharing, HUD and game-phase options.
+- Add 11 deterministic JVM tests including an expected Three-Key Vault **core**
+  trace (three Triggers → Tracker → Barrier). Full HUD Message dependency remains.
+- No Android UI, database migration, APK install, version bump, permission or
+  signing changes. Devices remain REFERENCE ONLY; no Fortnite fidelity claim.
+- Local compiler/harness checks passed; new Android CI and phone acceptance pending.

@@ -1,0 +1,18 @@
+0|INPUT|1|manual trigger|manual
+0|STATE_CHANGE|1|triggerCount=1|manual
+0|EVENT|1|onTriggered|manual
+0|FUNCTION|4|incrementProgress|manual
+0|STATE_CHANGE|4|progress=1;completed=false|manual
+0|INPUT|2|manual trigger|manual
+0|STATE_CHANGE|2|triggerCount=1|manual
+0|EVENT|2|onTriggered|manual
+0|FUNCTION|4|incrementProgress|manual
+0|STATE_CHANGE|4|progress=2;completed=false|manual
+0|INPUT|3|manual trigger|manual
+0|STATE_CHANGE|3|triggerCount=1|manual
+0|EVENT|3|onTriggered|manual
+0|FUNCTION|4|incrementProgress|manual
+0|STATE_CHANGE|4|progress=3;completed=true|manual
+0|EVENT|4|onComplete|manual
+0|FUNCTION|5|disable|manual
+0|STATE_CHANGE|5|enabled=false|manual

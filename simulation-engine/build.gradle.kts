@@ -5,5 +5,6 @@ kotlin {
 }
 dependencies { testImplementation(libs.junit) }
 dependencies { implementation(project(":core-model")) }
+dependencies { implementation(project(":device-catalog")) }
 
 tasks.withType<JavaCompile>().configureEach { options.release = 17 }

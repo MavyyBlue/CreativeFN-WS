@@ -34,3 +34,13 @@ metadata, semantic bindings and DTO round trips including Unicode text. Simulati
 fidelity tests begin in Phase 3; wire/schema tests do not establish runtime support.
 Before claiming Phase 1 complete: finish reference verification, run new green CI,
 and document the exact supported settings. Expand MVP devices individually later.
+
+## Phase 3 experimental runtime boundary (2026-10-12)
+
+The new JVM-only `PrototypeSimulationSession` implements an explicit bounded
+rules subset for these reference devices. It does not change catalog metadata,
+version, `NOT_SIMULATED` support labels or storage DTOs. Fortnite defaults,
+timing and multiplayer semantics remain unverified. Prototype runtime rejects
+unsupported Individual/Team tracker sharing, non-Off HUD presentation, game
+phase-only barrier modes, and zero target. HUD Message is not yet defined.
+See SIMULATION.md for the precise sandbox contract and test evidence.

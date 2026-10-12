@@ -4,12 +4,16 @@ Native Android companion for builders of Fortnite Creative 1.0. Prototype device
 logic locally, then use recorded settings and bindings to rebuild it manually.
 This project is independent of Epic Games and does not connect to Fortnite.
 
-**Current candidate: Phase 2 graph editor (0.0.4).** Create local mechanics,
+**Current app: Phase 2 graph editor (0.0.4), with a Phase 3 JVM runtime-core
+candidate.** Create local mechanics,
 place and configure Trigger/Tracker/Barrier, connect Events to Functions, move
 nodes, pan/zoom, undo/redo and reopen saved graphs. Home starts with New Mechanic;
 contextual information, hideable bars and Recent keep controls compact.
-All devices are Reference Only: simulation and overlay are future milestones.
-Local checks pass; the candidate still needs its own green CI and phone acceptance.
+All devices remain Reference Only; a new explicitly experimental JVM engine
+provides virtual-time Trigger/Tracker/Barrier tests but is not wired to a working
+simulator screen. The graph editor passed Android CI 38311622832; the new
+runtime candidate requires a separate green CI. Phone acceptance remains a
+separate gate. The overlay and full Three-Key Vault are not yet available.
 This is not the completed MVP.
 
 ## Build
@@ -40,14 +44,14 @@ See [current evidence](docs/CURRENT_STATE.md), [roadmap](ROADMAP.md),
 [testing](QA.md), [device contract](DEVICE_MODEL.md), [simulation](SIMULATION.md),
 and [overlay boundary](OVERLAY.md).
 
-## Release signing
+## Signing and installation safety
 
-Early builds use debug signing only. Before a `v*` release, create a dedicated
-release keystore outside the repository, store its encoded bytes and credentials
-in GitHub Actions Secrets, and add a tag workflow running tests, lint, release
-build, signing and `apksigner verify` before uploading
-`Creative-Logic-Mobile-v0.1.0.apk` to GitHub Releases. Preserve the certificate
-across releases. No keystore or signing credential is stored in this project.
+A permanent signing certificate has been established and backed up privately;
+see docs/CURRENT_STATE.md. Do not regenerate it or place keys/secrets in this
+repository. The existing Android CI still produces debug-signed APKs; the
+installed debug app may have an incompatible signing identity. Source-only
+runtime changes do not require installation. Plan verified release signing and
+data-safe install continuity separately before any replacement.
 
 ## Phone upload and APK download
 

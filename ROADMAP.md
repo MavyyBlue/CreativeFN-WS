@@ -1,27 +1,29 @@
 # Roadmap
 
-Phases advance only after implementation/tests and green GitHub Actions evidence.
+Phases advance only after implementation, tests, green GitHub Actions evidence,
+and owner phone acceptance for relevant Android interactions. Remote CI and device
+acceptance are separate gates.
 
-| Phase | Scope | Status |
+| Phase | Scope | Status as of 2026-10-12 |
 | --- | --- | --- |
-| 0 | Android foundation, storage wiring, tests, CI, docs | Validated baseline f305c5d / Android run 37726479431; owner phone acceptance |
-| 1 | Versioned typed catalog: Trigger, Tracker, Barrier | Catalog foundation validated in baseline; Fortnite reference verification open |
-| 2 | Touch graph, semantic ports, undo/redo, autosave | 9/10 candidate Android tests passed; save-button selector repair pending CI/phone acceptance |
-| 3 | Deterministic simulator, trace, stepping, golden vault | Not started |
-| 4 | Expand twelve MVP devices one at a time with tests | Not started |
+| 0 | Android foundation, storage, tests, CI and docs | Implemented; CI and earlier phone baseline accepted |
+| 1 | Typed Trigger, Tracker and Barrier catalog | Prototype catalog implemented; Fortnite fidelity unverified |
+| 2 | Touch editor, semantic bindings, undo/redo, autosave | Implemented; Android CI 38311622832 green at 105ce159, physical phone graph acceptance outstanding |
+| 3 | Virtual clock, deterministic execution, trace, stepping, loop controls, golden vault | Experimental Android-free runtime *candidate in this source bundle*; 11 targeted local JVM tests passed, remote CI pending; UI and HUD Message absent |
+| 4 | Additional devices verified one by one | Not started |
 | 5 | Validation and debugging UX | Not started |
-| 6 | Library/folders, thumbnails, search, .c1logic import/export | Not started |
-| 7 | Graph-derived build guide | Not started |
-| 8 | Passive overlay; real phone acceptance | Not started |
-| 9 | Profiling, process recreation, mobile polish | Not started |
+| 6 | Folders, thumbnails, search and .c1logic files | Basic draft Library/search exists; portable library milestone not started |
+| 7 | Generated build guides | Not started |
+| 8 | Passive Android overlay | Not started |
+| 9 | Performance, recreation and phone polish | Not started |
 
-Phase 0 is a shell and not a static diagramming substitute for the intended product.
-Next task: validate the Phase 2 editor through the existing source importer and
-Android CI, then confirm placement/movement/zoom/bindings and close/reopen on a
-phone. Phase 3 follows with the deterministic runtime and golden vault tests.
-The owner authorized graph work using explicitly reference-only prototype devices;
-Fortnite fidelity verification remains open.
-Device fidelity evidence is required before advertising simulation support.
+**Next step:** import and certify this Phase 3 core slice with the existing source
+ZIP → Android Actions workflow. No APK replacement is required: the Kotlin runtime
+is not yet connected to a user-facing simulator. After green CI, add a minimal
+in-app Run/Step/Reset view using only explicitly supported prototype semantics.
+HUD Message must be added and verified before the *full* Three-Key Vault fixture
+can pass. The current fixture proves the three Triggers → Tracker → Barrier core
+only, with no fabricated HUD device or claimed Fortnite fidelity.
 
 Deferred beyond MVP: cloud/community sharing, collaboration, ratings, comments,
 server catalog updates, scene view, graph components, advanced team/round simulation,

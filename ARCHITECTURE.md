@@ -10,8 +10,9 @@ The application owns a lazily constructed Room database. There is no DI framewor
 
 Dependency direction: `app → graph-engine → device-catalog → core-model`,
 `app → simulation-engine → core-model`.
-All JVM modules use no Android or Compose classes. The simulator module currently
-advertises unavailability only; it contains no runtime behavior.
+All JVM modules use no Android or Compose classes. The simulator module now has an opt-in experimental prototype runtime, but
+UI-facing `SimulationAvailability.isImplemented` remains false until an accepted
+simulation experience exists.
 
 | Logical boundary | Initial location | Status |
 | --- | --- | --- |
@@ -19,12 +20,12 @@ advertises unavailability only; it contains no runtime behavior.
 | core-model | core-model module | repository, empty-document DTO, typed device domain |
 | device-catalog | device-catalog JVM module | typed versioned reference definitions and instance codec |
 | graph-engine | graph-engine JVM module | immutable edits/history, graph DTO codec and save coordination |
-| simulation-engine | simulation-engine module | reserved; runtime in Phase 3 |
+| simulation-engine | simulation-engine module | experimental deterministic JVM engine + golden core trace; Phase 3 UI/HUD pending |
 | mechanic-storage | app / mechanicstorage | Room schema 1, JSON adapter |
 | overlay | app / overlay | reserved; Phase 8 |
 | ui-graph | app / uigraph | touch Canvas, palette, configuration/bindings sheets, workspace ViewModel |
 | ui-library | app / uilibrary | reserved; Phase 6 |
-| ui-simulator | app / uisimulator | reserved; Phase 3 |
+| ui-simulator | app / uisimulator | reserved; UI not wired in Phase 3 engine slice |
 | testing | JVM test source sets, app androidTest | codec, repository, launch smoke |
 
 ## Storage contract
@@ -47,10 +48,15 @@ navigation/ON_STOP and report failure with manual retry; failed writes keep edit
 One custom Compose Canvas paints nodes/ports/wires. Gesture previews stay local
 until release, keeping database writes and history out of pointer-move loops.
 
-## Planned runtime
+## Prototype runtime and future integration
 
-Graph data is authoritative for simulation inputs and generated guides. Runtime
-state will belong to SimulationSession, isolated from persistent configuration.
+Graph data is authoritative for simulation inputs and generated guides. The
+Android-free `PrototypeSimulationSession` now owns resettable Trigger/Tracker/Barrier
+runtime states, queue, virtual time, trace, and loop guards. It consumes the
+typed graph without mutating persistent configuration; it rejects unsupported
+player/team, HUD and phase modes rather than guessing. Its catalog remains
+REFERENCE ONLY, and no Compose simulator controls are wired yet. The full
+Three-Key Vault depends on a future HUD Message type.
 A compact immutable model will be constructed once for the passive overlay.
 The app will suspend simulation in background; the overlay must never start it.
 Future scene view may reference the same device IDs, without duplicating settings.

@@ -195,3 +195,34 @@ Full repaired instrumented execution requires new CI/device evidence.
 Post-repair local full Gradle check/lintDebug/app and test APK assembly passed;
 24 JVM tests, 11 importer tests, workflow syntax and APK signature checks passed.
 Repaired Android execution remains pending a new CI run.
+
+
+## 2026-10-12 — current HEAD reconciliation and Phase 3 engine slice
+
+At HEAD `105ce159ce23e939d51695903e17337df9cce89f`, Android run
+[38311622832](https://github.com/MavyyBlue/CreativeFN-WS/actions/runs/38311622832)
+completed green with both the `build` and `launch-smoke` jobs. Logs show Gradle
+BUILD SUCCESSFUL and `:app:connectedDebugAndroidTest` ran in the emulator job.
+The old Phase 2 save-selector failure is no longer a CI blocker. This **does not**
+substitute for owner phone touch/persistence acceptance.
+
+The separate signed-preview run [38311876816](https://github.com/MavyyBlue/CreativeFN-WS/actions/runs/38311876816)
+failed in `Recover established key, sign, and verify APK`, reporting `APK
+certificate does not match the established signing key`; it did not upload its
+signed APK. The normal Android run remains green; this Phase 3 change makes no
+signing or install changes. Do not rotate/recreate the permanent key.
+
+New Phase 3 candidate checks: 11 targeted JVM tests for ordered queue, virtual
+clock, actor-tagged trace, pause/step/resume/reset, one-use and cooldown,
+Three-Key Vault core progress 1/2/3 and barrier completion, literal checked-in
+golden trace, intentional cycles with time/depth/session/queue bounds, and
+unsupported port/options rejection. The Kotlin production sources and JUnit
+test sources compiled in a local Kotlin/JVM harness (compiler 1.9 with a
+minimal metadata/JUnit stand-in); all 11 targeted test methods ran successfully.
+**This is not the project's Gradle test suite or remote Android CI.** A full
+`./gradlew check lintDebug assembleDebug assembleDebugAndroidTest` and emulator
+run must pass after import; do not claim them for the candidate yet.
+
+Full Three-Key Vault requires HUD Message, which is absent; this first fixture
+is explicitly named `three-key-vault-core`. UI and physical-phone simulator
+acceptance remain pending. Prototype rules are not evidence of Fortnite fidelity.
