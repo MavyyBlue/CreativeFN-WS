@@ -1,0 +1,166 @@
+name: Build Creative Logic signed preview
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: creative-logic-signed-preview
+  cancel-in-progress: false
+
+jobs:
+  signed-preview:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+
+    steps:
+      - name: Check out main
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Preserve tested commit ID
+        shell: bash
+        run: |
+          git rev-parse HEAD > TESTED-COMMIT.txt
+          test ! -f creative-logic-mobile-source.zip
+
+      - name: Prepare separate preview package in runner only
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          path = Path('app/build.gradle.kts')
+          original = path.read_text()
+          package_line = 'applicationId = "dev.creativelogic.mobile"'
+          if original.count(package_line) != 1:
+              raise SystemExit('Unrecognized app identity; refusing to modify build')
+          if 'applicationIdSuffix' in original:
+              raise SystemExit('Existing variant suffix requires manual review')
+          # Only the ephemeral Actions checkout is changed; main remains untouched.
+          path.write_text(original + '''
+
+          // CI-only, isolated signed preview: does not replace the installed app.
+          android {
+              buildTypes {
+                  getByName("release") {
+                      applicationIdSuffix = ".signedpreview"
+                      versionNameSuffix = "-signedpreview"
+                      isDebuggable = false
+                  }
+              }
+          }
+          ''')
+          PY
+
+      - name: Set up Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+        with:
+          cmdline-tools-version: '13114758'
+          packages: 'platform-tools'
+          log-accepted-android-sdk-licenses: false
+
+      - name: Install SDK for project
+        shell: bash
+        run: sdkmanager 'platforms;android-37.0' 'build-tools;37.0.0'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Test and build unsigned isolated APK
+        shell: bash
+        run: |
+          python3 -m unittest discover -s testing -v
+          ./gradlew --no-daemon check lintDebug assembleDebugAndroidTest assembleRelease
+
+      - name: Recover established key, sign, and verify APK
+        shell: bash
+        env:
+          ENCRYPTED_BACKUP_BASE64: ${{ secrets.CREATIVE_LOGIC_ENCRYPTED_KEYSTORE_BASE64 }}
+          BACKUP_PASSPHRASE: ${{ secrets.CREATIVE_LOGIC_BACKUP_PASSPHRASE }}
+          KEYSTORE_PASSWORD: ${{ secrets.CREATIVE_LOGIC_KEYSTORE_PASSWORD }}
+        run: |
+          set -euo pipefail
+          umask 077
+          if [[ -z "$ENCRYPTED_BACKUP_BASE64" || -z "$BACKUP_PASSPHRASE" || -z "$KEYSTORE_PASSWORD" ]]; then
+            echo '::error::Signing secrets are missing'
+            exit 1
+          fi
+          work="$(mktemp -d "$RUNNER_TEMP/creative-signer.XXXXXXXX")"
+          trap 'rm -rf "$work"' EXIT
+          encrypted="$work/creative-logic-release.p12.enc"
+          keystore="$work/creative-logic-release.p12"
+          printf '%s' "$ENCRYPTED_BACKUP_BASE64" | base64 --decode > "$encrypted"
+
+          # Pin the original encrypted backup from successful bootstrap #38308855572.
+          expected_encrypted_sha256='dbada531b7797fc8df0748de8e018926c70072d2edb69525fcb1e175af16033b'
+          actual_encrypted_sha256="$(sha256sum "$encrypted" | cut -d' ' -f1)"
+          if [[ "$actual_encrypted_sha256" != "$expected_encrypted_sha256" ]]; then
+            echo '::error::Stored signing backup does not match the original'
+            exit 1
+          fi
+
+          openssl enc -d -aes-256-cbc -pbkdf2 -iter 600000 \
+            -in "$encrypted" -out "$keystore" -pass env:BACKUP_PASSPHRASE
+
+          keytool -exportcert -rfc -storetype PKCS12 \
+            -keystore "$keystore" -alias creative-logic-release \
+            -storepass:env KEYSTORE_PASSWORD -file "$work/certificate.pem" > /dev/null
+          expected_cert_sha256='83c500195d705aaf219b66d922bbd96d72edf1fa3da32d091335d7fbf462ac34'
+          actual_cert_sha256="$(openssl x509 -in "$work/certificate.pem" -noout -fingerprint -sha256 | cut -d= -f2 | tr -d ':' | tr '[:upper:]' '[:lower:]')"
+          if [[ "$actual_cert_sha256" != "$expected_cert_sha256" ]]; then
+            echo '::error::Signing certificate mismatch'
+            exit 1
+          fi
+
+          tools="$ANDROID_HOME/build-tools/37.0.0"
+          source_apk='app/build/outputs/apk/release/app-release-unsigned.apk'
+          test -s "$source_apk"
+          "$tools/zipalign" -f -p 4 "$source_apk" "$work/aligned.apk"
+          destination='creative-logic-signed-preview.apk'
+          "$tools/apksigner" sign \
+            --ks "$keystore" --ks-type PKCS12 --ks-key-alias creative-logic-release \
+            --ks-pass env:KEYSTORE_PASSWORD --key-pass env:KEYSTORE_PASSWORD \
+            --out "$destination" "$work/aligned.apk"
+          "$tools/apksigner" verify --verbose "$destination" > /dev/null
+          signer_sha256="$("$tools/apksigner" verify --print-certs "$destination" | sed -n 's/^Signer #1 certificate SHA-256 digest: //p' | tr '[:upper:]' '[:lower:]')"
+          if [[ "$signer_sha256" != "$expected_cert_sha256" ]]; then
+            echo '::error::APK certificate does not match the established signing key'
+            exit 1
+          fi
+          "$tools/aapt" dump badging "$destination" | grep -F "package: name='dev.creativelogic.mobile.signedpreview'" > /dev/null || {
+            echo '::error::Preview APK package identity was unexpected'
+            exit 1
+          }
+
+          sha256sum "$destination" > APK-SHA256.txt
+          echo "$signer_sha256" > SIGNING-CERTIFICATE-SHA256.txt
+          {
+            echo '## Signed preview ready for isolated phone acceptance'
+            echo ''
+            echo '- Verified package: `dev.creativelogic.mobile.signedpreview` (separate from installed app)'
+            echo '- Original certificate fingerprint matched and APK signature verified.'
+            echo '- Tests, strict lint, APK assembly passed in this run.'
+            echo '- This preview cannot access mechanics stored in the existing app.'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload public signed APK and verification metadata
+        uses: actions/upload-artifact@v4
+        with:
+          name: creative-logic-signed-preview
+          path: |
+            creative-logic-signed-preview.apk
+            APK-SHA256.txt
+            SIGNING-CERTIFICATE-SHA256.txt
+            TESTED-COMMIT.txt
+          if-no-files-found: error
+          retention-days: 30
