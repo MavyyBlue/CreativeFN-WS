@@ -2,7 +2,8 @@ package dev.creativelogic.mobile.blueprint
 
 import android.content.Context
 import android.content.Intent
-import android.net.Uri
+import androidx.core.net.toUri
+import androidx.core.content.edit
 import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -159,7 +160,7 @@ fun BlueprintAccess(repository: MechanicRepository, modifier: Modifier = Modifie
             permissionExplanation = false
             try {
                 permission.launch(Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
-                    Uri.parse("package:${context.packageName}")))
+                    "package:${context.packageName}".toUri()))
             } catch (ex: Exception) {
                 pendingOverlayId = null
                 message = "Android could not open overlay settings."
@@ -224,5 +225,5 @@ class BlueprintProgress(context: Context, mechanicId: String) {
     private val prefs = context.applicationContext.getSharedPreferences("blueprint-progress", Context.MODE_PRIVATE)
     private val key = "checked:$mechanicId"
     fun checked(): Set<Int> = prefs.getString(key, "").orEmpty().split(',').mapNotNull { it.toIntOrNull() }.toSet()
-    fun save(checked: Set<Int>) { prefs.edit().putString(key, checked.sorted().joinToString(",")).apply() }
+    fun save(checked: Set<Int>) { prefs.edit { putString(key, checked.sorted().joinToString(",")) } }
 }

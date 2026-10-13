@@ -14,6 +14,10 @@ import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.PixelFormat
 import android.graphics.RectF
+import androidx.core.content.edit
+import androidx.core.graphics.toColorInt
+import androidx.core.graphics.withTranslation
+import androidx.core.graphics.withScale
 import android.graphics.drawable.GradientDrawable
 import android.os.Build
 import android.os.IBinder
@@ -50,9 +54,10 @@ class BlueprintOverlayService : Service() {
         private const val DOCUMENT = "saved_document"
         fun launch(context: Context, mechanic: SavedMechanic, codec: MechanicGraphCodec) {
             require(Settings.canDrawOverlays(context)) { "Draw Over Other Apps permission is required" }
-            context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
-                .putString(DOCUMENT, codec.encode(mechanic))
-                .putString("selected", mechanic.mechanicMetadata.id).apply()
+            context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit {
+                putString(DOCUMENT, codec.encode(mechanic))
+                putString("selected", mechanic.mechanicMetadata.id)
+            }
             context.startForegroundService(Intent(context, BlueprintOverlayService::class.java).setAction(ACTION_START))
         }
     }
@@ -104,7 +109,7 @@ class BlueprintOverlayService : Service() {
     }
 
     private fun dp(value: Int) = (value * resources.displayMetrics.density + 0.5f).toInt()
-    private fun color(hex: String) = Color.parseColor(hex)
+    private fun color(hex: String) = hex.toColorInt()
     private fun background(hex: String, radius: Int = 14): GradientDrawable = GradientDrawable().apply {
         setColor(color(hex)); cornerRadius = dp(radius).toFloat(); setStroke(dp(1), color("#515568"))
     }
@@ -149,7 +154,10 @@ class BlueprintOverlayService : Service() {
         try { root?.let { manager.updateViewLayout(it, p) } } catch (_: Exception) { stopSelf(); return }
         if (save) {
             val prefix = if (expanded) "panel" else "bubble"
-            prefs.edit().putInt("${prefix}X", p.x).putInt("${prefix}Y", p.y).apply()
+            prefs.edit {
+                putInt("${prefix}X", p.x)
+                putInt("${prefix}Y", p.y)
+            }
         }
     }
 
@@ -255,7 +263,7 @@ class BlueprintOverlayService : Service() {
         }
     }
     private fun rememberStep(guide: Blueprint) {
-        prefs.edit().putInt("step:${guide.mechanicId}", step).apply()
+        prefs.edit { putInt("step:${guide.mechanicId}", step) }
     }
     private fun showDevices(layout: LinearLayout, guide: Blueprint) {
         layout.addView(heading("Device configuration"))
@@ -275,7 +283,7 @@ class BlueprintOverlayService : Service() {
     }
     private fun showGraph(layout: LinearLayout, guide: Blueprint) {
         layout.addView(heading("Device graph • pinch to zoom, drag to pan"))
-        val graph = BlueprintGraphView(this, guide)
+        val graph = BlueprintGraphView(this).apply { bind(guide) }
         layout.addView(graph, LinearLayout.LayoutParams(-1, dp(350)))
         layout.addView(label("Graph is a reference. Follow the Steps and Devices tabs for exact saved settings."))
     }
@@ -292,7 +300,17 @@ class BlueprintOverlayService : Service() {
     }
 }
 
-private class BlueprintGraphView(context: Context, private val blueprint: Blueprint) : View(context) {
+private class BlueprintGraphView(context: Context) : View(context) {
+    // Programmatically bound before the View enters the hierarchy. The Context-only
+    // constructor also supports Android's tooling, and each guide is an immutable snapshot.
+    private lateinit var blueprint: Blueprint
+    private var nodes: Map<String, dev.creativelogic.graph.BlueprintDevice> = emptyMap()
+    fun bind(value: Blueprint) {
+        blueprint = value
+        nodes = value.devices.associateBy { it.id }
+        invalidate()
+    }
+    private val nodeBounds = RectF()
     private val density = resources.displayMetrics.density
     private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
     private var zoom = 0.8f
@@ -322,22 +340,30 @@ private class BlueprintGraphView(context: Context, private val blueprint: Bluepr
     }
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
-        canvas.save(); canvas.translate(panX, panY); canvas.scale(zoom * density, zoom * density)
-        val nodes = blueprint.devices.associateBy { it.id }
-        paint.style = Paint.Style.STROKE; paint.color = Color.rgb(110, 218, 246); paint.strokeWidth = 2f
-        blueprint.bindings.forEach { link ->
-            val a = nodes[link.sourceId]; val b = nodes[link.targetId]
-            if (a != null && b != null) canvas.drawLine(a.graphX + 176f, a.graphY + 32f, b.graphX, b.graphY + 32f, paint)
+        if (!::blueprint.isInitialized) return
+        canvas.withTranslation(panX, panY) {
+            withScale(zoom * density, zoom * density) {
+                paint.style = Paint.Style.STROKE
+                paint.color = Color.rgb(110, 218, 246)
+                paint.strokeWidth = 2f
+                blueprint.bindings.forEach { link ->
+                    val a = nodes[link.sourceId]; val b = nodes[link.targetId]
+                    if (a != null && b != null) drawLine(a.graphX + 176f, a.graphY + 32f, b.graphX, b.graphY + 32f, paint)
+                }
+                blueprint.devices.forEach { device ->
+                    paint.style = Paint.Style.FILL
+                    paint.color = Color.rgb(53, 61, 94)
+                    nodeBounds.set(device.graphX, device.graphY, device.graphX + 176f, device.graphY + 66f)
+                    drawRoundRect(nodeBounds, 12f, 12f, paint)
+                    paint.color = Color.WHITE
+                    paint.textSize = 15f
+                    drawText(device.name, 0, min(device.name.length, 20), device.graphX + 9f, device.graphY + 27f, paint)
+                    paint.textSize = 12f
+                    paint.color = Color.rgb(190, 210, 234)
+                    drawText(device.type, 0, min(device.type.length, 24), device.graphX + 9f, device.graphY + 48f, paint)
+                }
+            }
         }
-        blueprint.devices.forEach { device ->
-            paint.style = Paint.Style.FILL; paint.color = Color.rgb(53, 61, 94)
-            canvas.drawRoundRect(RectF(device.graphX, device.graphY, device.graphX + 176f, device.graphY + 66f), 12f, 12f, paint)
-            paint.color = Color.WHITE; paint.textSize = 15f
-            canvas.drawText(device.name.take(20), device.graphX + 9f, device.graphY + 27f, paint)
-            paint.textSize = 12f; paint.color = Color.rgb(190, 210, 234)
-            canvas.drawText(device.type.take(24), device.graphX + 9f, device.graphY + 48f, paint)
-        }
-        canvas.restore()
     }
     override fun onTouchEvent(event: MotionEvent): Boolean {
         scaler.onTouchEvent(event)
