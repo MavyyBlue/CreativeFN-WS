@@ -33,3 +33,7 @@ Open the compact `⋯` menu for Size (separate width/height sliders, compact res
 Phone acceptance: launch overlay in Fortnite, confirm carousel is below rather than within the dark panel; tap/swipe all three destinations; drag panel and ensure carousel follows; verify full-height graph and selected-node inspector, focus/double-tap clear and Fit; adjust size, hide/reveal navigation; collapse/reopen; rotate; test Fortnite controls outside both actual overlay windows; stop from menu and persistent notification.
 
 If the second navigator window cannot be created, the main panel stays active and the `⋯` menu offers a **View Steps / View Links / View Graph** fallback. The original single bubble/panel feature is never deliberately torn down for a navigator-only failure.
+
+## Inline node expansion (Android CI pending)
+
+Graph no longer creates a separate settings bottom sheet. Tapping a device draws a larger version of that device at the same saved graph coordinates, including wrapped options, builder notes and exact incoming/outgoing binding labels. Tap again to collapse; other device taps change selection. Large device configurations are scrolled inside the card (not with the graph pan gesture), and the camera adjusts only enough to keep the card readable in the current overlay size. One-hop long-press focus, blank double-tap focus clear, Fit/pinch/drag, Steps/Links, folder metadata and Cover Flow persist. Node sizes are view-only. Source baseline is CI-green `5d15dc96` and new Android acceptance is pending.

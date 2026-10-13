@@ -783,52 +783,31 @@ class BlueprintOverlayService : Service() {
         }
     }
 
-    /** Full-bleed graph: changing inspectors never changes the graph viewport or node positions. */
+    /** The node itself unfolds in the original graph space; no separate inspector pane. */
     private fun showGraph(surface: FrameLayout, guide: Blueprint) {
         val graph = BlueprintGraphView(this).apply {
             bind(guide)
+            setExpanded(selectedGraphId)
             setFocus(focusedGraphId)
         }
         surface.addView(graph, FrameLayout.LayoutParams(-1, -1))
         surface.addView(button("Fit") { graph.fitToContent() }.apply {
-            contentDescription = "Fit all saved devices and bindings"
+            contentDescription = "Fit saved devices and the expanded node into the blueprint graph"
         }, FrameLayout.LayoutParams(dp(46), dp(30), Gravity.TOP or Gravity.END).apply {
             topMargin = dp(4); rightMargin = dp(45)
         })
-        val inspectorArea = FrameLayout(this)
-        surface.addView(inspectorArea, FrameLayout.LayoutParams(-1, -2, Gravity.BOTTOM))
         val focusLabel = label("", 11f)
         surface.addView(focusLabel, FrameLayout.LayoutParams(-2, dp(28), Gravity.TOP or Gravity.CENTER_HORIZONTAL).apply {
             topMargin = dp(4)
         })
-        fun updateInspector() {
-            inspectorArea.removeAllViews()
-            val device = guide.devices.firstOrNull { it.id == selectedGraphId } ?: return
-            val details = LinearLayout(this).apply {
-                orientation = LinearLayout.VERTICAL
-                background = background("#26334E", 10)
-            }
-            details.addView(button("×  ${device.name} · close") {
-                selectedGraphId = null
-                inspectorArea.removeAllViews()
-            })
-            details.addView(label("${device.type} — configured options", 12f, true))
-            device.options.forEach { details.addView(label("${it.name}: ${it.value}", 12f)) }
-            device.notes?.takeIf { it.isNotBlank() }?.let { details.addView(label("Note: $it", 12f)) }
-            val links = BlueprintConnections.touching(guide, device.id)
-            details.addView(label("Bindings (${links.size})", 12f, true))
-            links.forEach { link -> details.addView(label("${link.sourceName} / ${link.eventName} → ${link.targetName} / ${link.functionName}", 12f)) }
-            details.addView(button("Explore in Links") { linkSelectedId = device.id; switchTab(1) })
-            val scroll = ScrollView(this).apply { isFillViewport = false; addView(details) }
-            val maxHeight = ((params?.height ?: dp(250)) * 0.48f).toInt().coerceAtLeast(dp(85))
-            inspectorArea.addView(scroll, FrameLayout.LayoutParams(-1, maxHeight))
+        graph.onNodeTap = { id ->
+            selectedGraphId = if (selectedGraphId == id) null else id
+            graph.setExpanded(selectedGraphId)
         }
-        graph.onNodeTap = { id -> selectedGraphId = id; updateInspector() }
         graph.onFocusChanged = { id ->
             focusedGraphId = id
             focusLabel.text = if (id == null) "" else "Focused: ${guide.devices.firstOrNull { it.id == id }?.name ?: "Device"}"
         }
-        updateInspector()
         graph.onFocusChanged(focusedGraphId)
         if (guide.devices.isEmpty()) surface.addView(label("Add devices to see the saved graph."),
             FrameLayout.LayoutParams(-2, -2, Gravity.CENTER))
@@ -861,16 +840,29 @@ private class AccessibleOverlayLabel(context: Context) : TextView(context) {
 internal class BlueprintGraphView(context: Context) : View(context) {
     private lateinit var blueprint: Blueprint
     private var nodes: Map<String, dev.creativelogic.graph.BlueprintDevice> = emptyMap()
-    private val nodeBounds = RectF() // never allocate objects during onDraw
+    private val nodeBounds = RectF() // allocated once, reused during drawing
     private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
+    private val measuringPaint = Paint(Paint.ANTI_ALIAS_FLAG)
+    private val density = resources.displayMetrics.density
+    private val touchSlop = android.view.ViewConfiguration.get(context).scaledTouchSlop.toFloat()
     private var zoom = 1f
     private var panX = 0f
     private var panY = 0f
     private var lastX = 0f
     private var lastY = 0f
+    private var downX = 0f
+    private var downY = 0f
     private var moving = false
+    private var insideDetails = false
     private var focusId: String? = null
     private var highlighted: Set<String>? = null
+    private var expandedId: String? = null
+    private var lines: List<DisplayLine> = emptyList()
+    private var contentHeight = 0f
+    private var visibleHeight = 0f
+    private var detailScroll = 0f
+
+    private data class DisplayLine(val text: String, val style: InlineNodeCards.Style)
     var onNodeTap: (String?) -> Unit = {}
     var onFocusChanged: (String?) -> Unit = {}
 
@@ -879,27 +871,83 @@ internal class BlueprintGraphView(context: Context) : View(context) {
         highlighted = focusId?.let { BlueprintConnections.directlyConnected(blueprint, it) }
         invalidate()
     }
+
+    fun setExpanded(id: String?) {
+        expandedId = id?.takeIf { value -> nodes.containsKey(value) }
+        detailScroll = 0f
+        rebuildLines()
+        if (width > 0 && height > 0) bringExpandedIntoView()
+        invalidate()
+    }
+
+    private fun expandedHeight(): Float = InlineNodeCards.HEADER_HEIGHT + visibleHeight +
+        (if (expandedId == null) 0f else InlineNodeCards.FOOTER_HEIGHT)
+
+    private fun rebuildLines() {
+        lines = emptyList()
+        contentHeight = 0f
+        visibleHeight = 0f
+        val id = expandedId ?: return
+        val entries = InlineNodeCards.entries(blueprint, id)
+        // Wrap once on selection, not from onDraw(). Paint measurements prevent clipping
+        // when a device name, option, or binding is longer than the node width.
+        val maxWidth = InlineNodeCards.EXPANDED_WIDTH - 2 * InlineNodeCards.INNER_PADDING
+        measuringPaint.textSize = 12.5f
+        lines = entries.flatMap { entry ->
+            val text = entry.text.trim()
+            if (text.isEmpty()) return@flatMap listOf(DisplayLine("", entry.style))
+            val result = mutableListOf<DisplayLine>()
+            var current = ""
+            for (word in text.split(Regex("\\s+"))) {
+                val next = if (current.isEmpty()) word else "$current $word"
+                if (measuringPaint.measureText(next) <= maxWidth) {
+                    current = next
+                } else {
+                    if (current.isNotEmpty()) result.add(DisplayLine(current, entry.style))
+                    current = word
+                    // Exceptionally long unbroken values must still be readable.
+                    while (current.isNotEmpty() && measuringPaint.measureText(current) > maxWidth) {
+                        val count = measuringPaint.breakText(current, true, maxWidth, null).coerceAtLeast(1)
+                        result.add(DisplayLine(current.take(count), entry.style))
+                        current = current.drop(count)
+                    }
+                }
+            }
+            if (current.isNotEmpty()) result.add(DisplayLine(current, entry.style))
+            result
+        }
+        contentHeight = lines.size * InlineNodeCards.LINE_HEIGHT + 2 * InlineNodeCards.INNER_PADDING
+        visibleHeight = contentHeight.coerceAtMost(InlineNodeCards.MAX_BODY_HEIGHT)
+    }
+
     private fun hitNode(x: Float, y: Float): String? {
         if (!::blueprint.isInitialized || zoom <= 0f) return null
-        val graphX = (x - panX) / zoom
-        val graphY = (y - panY) / zoom
-        return blueprint.devices.asReversed().firstOrNull { device ->
-            graphX >= device.graphX && graphX <= device.graphX + 176f &&
-                graphY >= device.graphY && graphY <= device.graphY + 66f
-        }?.id
+        return InlineNodeCards.hitTest(blueprint, expandedId, expandedHeight(),
+            (x - panX) / zoom, (y - panY) / zoom)
     }
+
+    private fun touchingDetails(x: Float, y: Float): Boolean {
+        val device = nodes[expandedId] ?: return false
+        val sceneX = (x - panX) / zoom
+        val sceneY = (y - panY) / zoom
+        return sceneX >= device.graphX && sceneX <= device.graphX + InlineNodeCards.EXPANDED_WIDTH &&
+            sceneY >= device.graphY + InlineNodeCards.HEADER_HEIGHT &&
+            sceneY <= device.graphY + expandedHeight()
+    }
+
     private val gestures = GestureDetector(context, object : GestureDetector.SimpleOnGestureListener() {
         override fun onDown(event: MotionEvent): Boolean = true
         override fun onLongPress(event: MotionEvent) {
-            if (!scaler.isInProgress) hitNode(event.x, event.y)?.let { id ->
+            if (!scaler.isInProgress && !moving) hitNode(event.x, event.y)?.let { id ->
                 setFocus(id)
                 onFocusChanged(id)
                 performHapticFeedback(android.view.HapticFeedbackConstants.LONG_PRESS)
             }
         }
         override fun onSingleTapConfirmed(event: MotionEvent): Boolean {
-            if (moving) return false
-            onNodeTap(hitNode(event.x, event.y))
+            if (moving || scaler.isInProgress) return false
+            val id = hitNode(event.x, event.y)
+            if (id != null) { onNodeTap(id); performClick() }
             return true
         }
         override fun onDoubleTap(event: MotionEvent): Boolean {
@@ -913,7 +961,6 @@ internal class BlueprintGraphView(context: Context) : View(context) {
     })
     private val scaler = ScaleGestureDetector(context, object : ScaleGestureDetector.SimpleOnScaleGestureListener() {
         override fun onScale(detector: ScaleGestureDetector): Boolean {
-            // Zoom toward the gesture focus, not an arbitrary screen corner.
             val old = zoom
             zoom = (zoom * detector.scaleFactor).coerceIn(0.02f, 4.5f)
             val ratio = zoom / old
@@ -928,13 +975,15 @@ internal class BlueprintGraphView(context: Context) : View(context) {
         blueprint = value
         nodes = value.devices.associateBy { it.id }
         if (focusId !in nodes.keys) focusId = null
+        if (expandedId !in nodes.keys) expandedId = null
         highlighted = focusId?.let { BlueprintConnections.directlyConnected(value, it) }
+        rebuildLines()
         if (width > 0 && height > 0) fitToContent() else invalidate()
     }
 
     init {
         setBackgroundColor(Color.rgb(20, 28, 43))
-        contentDescription = "Blueprint graph, pinch to zoom and drag to pan"
+        contentDescription = "Blueprint graph. Tap device to expand or collapse settings, long press for connection focus, pinch to zoom, drag to pan. Open Links for accessible device details."
     }
 
     fun fitToContent() {
@@ -944,17 +993,47 @@ internal class BlueprintGraphView(context: Context) : View(context) {
         }
         val left = blueprint.devices.minOf { it.graphX }
         val top = blueprint.devices.minOf { it.graphY }
-        val right = blueprint.devices.maxOf { it.graphX } + 176f
-        val bottom = blueprint.devices.maxOf { it.graphY } + 66f
+        val right = blueprint.devices.maxOf { it.graphX +
+            if (it.id == expandedId) InlineNodeCards.EXPANDED_WIDTH else InlineNodeCards.COMPACT_WIDTH }
+        val bottom = blueprint.devices.maxOf { it.graphY +
+            if (it.id == expandedId) expandedHeight() else InlineNodeCards.COMPACT_HEIGHT }
         val graphWidth = (right - left).coerceAtLeast(1f)
         val graphHeight = (bottom - top).coerceAtLeast(1f)
-        val margin = resources.displayMetrics.density * 13f
-        // Pixel-space zoom: source graph coordinates are logical scene units, not density-scaled dp.
+        val margin = density * 13f
         zoom = min(((width - margin * 2f).coerceAtLeast(1f)) / graphWidth,
             ((height - margin * 2f).coerceAtLeast(1f)) / graphHeight).coerceIn(0.02f, 4.5f)
         panX = (width - graphWidth * zoom) / 2f - left * zoom
         panY = (height - graphHeight * zoom) / 2f - top * zoom
         invalidate()
+    }
+
+    private fun bringExpandedIntoView() {
+        val device = nodes[expandedId] ?: return
+        val margin = density * 10f
+        val safeTop = density * 42f // do not bury the expanded header under Fit/menu
+        val safeBottom = height - margin
+        val availableWidth = (width - 2f * margin).coerceAtLeast(1f)
+        val availableHeight = (safeBottom - safeTop).coerceAtLeast(1f)
+        val maxReadableZoom = min(availableWidth / InlineNodeCards.EXPANDED_WIDTH,
+            availableHeight / expandedHeight()).coerceIn(0.02f, 4.5f)
+        // Fit the whole card even when only one compact node was zoomed to 4.5x.
+        // In a dense graph, zoom in enough for settings to become legible when possible.
+        val desiredZoom = zoom.coerceIn(min(1f, maxReadableZoom), maxReadableZoom)
+        if (desiredZoom != zoom) {
+            val devicePixelX = device.graphX * zoom + panX
+            val devicePixelY = device.graphY * zoom + panY
+            panX = devicePixelX - device.graphX * desiredZoom
+            panY = devicePixelY - device.graphY * desiredZoom
+            zoom = desiredZoom
+        }
+        val left = device.graphX * zoom + panX
+        val top = device.graphY * zoom + panY
+        val right = (device.graphX + InlineNodeCards.EXPANDED_WIDTH) * zoom + panX
+        val bottom = (device.graphY + expandedHeight()) * zoom + panY
+        if (left < margin) panX += margin - left
+        else if (right > width - margin) panX -= right - (width - margin)
+        if (top < safeTop) panY += safeTop - top
+        else if (bottom > safeBottom) panY -= bottom - safeBottom
     }
 
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
@@ -968,8 +1047,8 @@ internal class BlueprintGraphView(context: Context) : View(context) {
         if (blueprint.devices.isEmpty()) {
             paint.color = Color.WHITE
             paint.style = Paint.Style.FILL
-            paint.textSize = 15f * resources.displayMetrics.density
-            canvas.drawText("No graph devices", 14f, 30f * resources.displayMetrics.density, paint)
+            paint.textSize = 15f * density
+            canvas.drawText("No graph devices", 14f, 30f * density, paint)
             return
         }
         val focused = focusId
@@ -983,33 +1062,101 @@ internal class BlueprintGraphView(context: Context) : View(context) {
                     if (a != null && b != null) {
                         val direct = focused == null || link.sourceId == focused || link.targetId == focused
                         paint.color = if (direct) Color.rgb(110, 218, 246) else Color.rgb(57, 68, 85)
-                        drawLine(a.graphX + 176f, a.graphY + 33f,
-                            b.graphX, b.graphY + 33f, paint)
+                        val fromX = a.graphX + if (a.id == expandedId) InlineNodeCards.EXPANDED_WIDTH else InlineNodeCards.COMPACT_WIDTH
+                        drawLine(fromX, a.graphY + 33f, b.graphX, b.graphY + 33f, paint)
                     }
                 }
                 blueprint.devices.forEach { device ->
-                    val emphasized = neighbors == null || device.id in neighbors
-                    val central = device.id == focused
-                    nodeBounds.set(device.graphX, device.graphY, device.graphX + 176f, device.graphY + 66f)
-                    paint.style = Paint.Style.FILL
-                    paint.color = if (emphasized) Color.rgb(53, 70, 107) else Color.rgb(34, 39, 51)
-                    drawRoundRect(nodeBounds, 10f, 10f, paint)
-                    paint.style = Paint.Style.STROKE
-                    paint.color = if (central) Color.rgb(228, 244, 255)
-                        else if (emphasized) Color.rgb(123, 168, 237) else Color.rgb(61, 70, 86)
-                    paint.strokeWidth = if (central) 3.4f else 1.7f
-                    drawRoundRect(nodeBounds, 10f, 10f, paint)
-                    paint.style = Paint.Style.FILL
-                    paint.color = if (emphasized) Color.WHITE else Color.rgb(96, 106, 123)
-                    paint.textSize = 15f
-                    drawText(device.name, 0, min(device.name.length, 20),
-                        device.graphX + 9f, device.graphY + 26f, paint)
-                    paint.textSize = 12f
-                    paint.color = if (emphasized) Color.rgb(205, 221, 247) else Color.rgb(96, 106, 123)
-                    drawText(device.type, 0, min(device.type.length, 24),
-                        device.graphX + 9f, device.graphY + 48f, paint)
+                    if (device.id != expandedId) drawCompactNode(this, device, neighbors, focused)
                 }
+                // The expanded node is still the same device at its original graph coordinates,
+                // drawn last to avoid neighboring cards clipping its details.
+                blueprint.devices.firstOrNull { it.id == expandedId }?.let { drawExpandedNode(this, it, focused) }
             }
+        }
+    }
+
+    private fun drawCompactNode(canvas: Canvas, device: dev.creativelogic.graph.BlueprintDevice,
+                                neighbors: Set<String>?, focused: String?) {
+        val emphasized = neighbors == null || device.id in neighbors
+        val central = device.id == focused
+        nodeBounds.set(device.graphX, device.graphY, device.graphX + InlineNodeCards.COMPACT_WIDTH,
+            device.graphY + InlineNodeCards.COMPACT_HEIGHT)
+        paint.style = Paint.Style.FILL
+        paint.color = if (emphasized) Color.rgb(53, 70, 107) else Color.rgb(34, 39, 51)
+        canvas.drawRoundRect(nodeBounds, 10f, 10f, paint)
+        paint.style = Paint.Style.STROKE
+        paint.color = if (central) Color.rgb(228, 244, 255)
+            else if (emphasized) Color.rgb(123, 168, 237) else Color.rgb(61, 70, 86)
+        paint.strokeWidth = if (central) 3.4f else 1.7f
+        canvas.drawRoundRect(nodeBounds, 10f, 10f, paint)
+        paint.style = Paint.Style.FILL
+        paint.color = if (emphasized) Color.WHITE else Color.rgb(96, 106, 123)
+        paint.textSize = 15f
+        canvas.drawText(device.name, 0, min(device.name.length, 20), device.graphX + 9f, device.graphY + 26f, paint)
+        paint.textSize = 12f
+        paint.color = if (emphasized) Color.rgb(205, 221, 247) else Color.rgb(96, 106, 123)
+        canvas.drawText(device.type, 0, min(device.type.length, 24), device.graphX + 9f, device.graphY + 48f, paint)
+    }
+
+    private fun drawExpandedNode(canvas: Canvas, device: dev.creativelogic.graph.BlueprintDevice,
+                                 focused: String?) {
+        val left = device.graphX
+        val top = device.graphY
+        val w = InlineNodeCards.EXPANDED_WIDTH
+        val h = expandedHeight()
+        nodeBounds.set(left, top, left + w, top + h)
+        paint.style = Paint.Style.FILL
+        paint.color = Color.rgb(40, 58, 88)
+        canvas.drawRoundRect(nodeBounds, 11f, 11f, paint)
+        paint.style = Paint.Style.STROKE
+        paint.color = if (device.id == focused) Color.rgb(228, 244, 255) else Color.rgb(130, 186, 247)
+        paint.strokeWidth = 2.5f
+        canvas.drawRoundRect(nodeBounds, 11f, 11f, paint)
+        paint.style = Paint.Style.FILL
+        paint.color = Color.WHITE
+        paint.textSize = 16f
+        canvas.drawText(device.name, 0, min(device.name.length, 22), left + 11f, top + 25f, paint)
+        paint.color = Color.rgb(208, 227, 255)
+        paint.textSize = 12f
+        canvas.drawText(device.type, 0, min(device.type.length, 28), left + 11f, top + 47f, paint)
+        paint.color = Color.rgb(133, 171, 221)
+        paint.strokeWidth = 1f
+        canvas.drawLine(left + 10f, top + InlineNodeCards.HEADER_HEIGHT, left + w - 10f,
+            top + InlineNodeCards.HEADER_HEIGHT, paint)
+        canvas.save()
+        canvas.clipRect(left + 8f, top + InlineNodeCards.HEADER_HEIGHT + 3f,
+            left + w - 8f, top + InlineNodeCards.HEADER_HEIGHT + visibleHeight)
+        paint.style = Paint.Style.FILL
+        lines.forEachIndexed { index, line ->
+            val y = top + InlineNodeCards.HEADER_HEIGHT + InlineNodeCards.INNER_PADDING +
+                (index + 1) * InlineNodeCards.LINE_HEIGHT - 4f - detailScroll
+            if (y >= top + InlineNodeCards.HEADER_HEIGHT && y <= top + InlineNodeCards.HEADER_HEIGHT + visibleHeight + 12f) {
+                paint.textSize = if (line.style == InlineNodeCards.Style.SECTION) 12.4f else 12.5f
+                paint.color = when (line.style) {
+                    InlineNodeCards.Style.SECTION -> Color.rgb(137, 218, 252)
+                    InlineNodeCards.Style.NOTE -> Color.rgb(194, 204, 220)
+                    InlineNodeCards.Style.CONNECTION -> Color.rgb(225, 233, 255)
+                    InlineNodeCards.Style.OPTION -> Color.WHITE
+                }
+                canvas.drawText(line.text, left + InlineNodeCards.INNER_PADDING, y, paint)
+            }
+        }
+        canvas.restore()
+        paint.textSize = 10f
+        paint.color = Color.rgb(184, 205, 235)
+        val hint = if (contentHeight > visibleHeight) "↕ Scroll settings · Tap node to close" else "Tap node to close"
+        canvas.drawText(hint, left + 11f, top + h - 5f, paint)
+        if (contentHeight > visibleHeight) {
+            // Paint-only scrollbar. No new Views, timers or layout objects while drawing.
+            val trackTop = top + InlineNodeCards.HEADER_HEIGHT + 5f
+            val trackHeight = visibleHeight - 10f
+            val thumbHeight = (trackHeight * visibleHeight / contentHeight).coerceAtLeast(14f)
+            val offset = if (contentHeight > visibleHeight) detailScroll / (contentHeight - visibleHeight) else 0f
+            paint.color = Color.rgb(121, 177, 232)
+            paint.strokeWidth = 3f
+            canvas.drawLine(left + w - 5f, trackTop + offset * (trackHeight - thumbHeight),
+                left + w - 5f, trackTop + offset * (trackHeight - thumbHeight) + thumbHeight, paint)
         }
     }
 
@@ -1019,16 +1166,24 @@ internal class BlueprintGraphView(context: Context) : View(context) {
         when (event.actionMasked) {
             MotionEvent.ACTION_DOWN -> {
                 parent?.requestDisallowInterceptTouchEvent(true)
+                downX = event.x; downY = event.y
                 lastX = event.x; lastY = event.y
                 moving = false
+                insideDetails = touchingDetails(event.x, event.y)
                 return true
             }
+            MotionEvent.ACTION_POINTER_DOWN -> { moving = true; return true }
             MotionEvent.ACTION_MOVE -> {
                 if (event.pointerCount == 1 && !scaler.isInProgress) {
-                    if (abs(event.x - lastX) > 2f || abs(event.y - lastY) > 2f) moving = true
+                    if (abs(event.x - downX) > touchSlop || abs(event.y - downY) > touchSlop) moving = true
                     if (moving) {
-                        panX += event.x - lastX
-                        panY += event.y - lastY
+                        if (insideDetails && contentHeight > visibleHeight) {
+                            detailScroll = (detailScroll - (event.y - lastY) / zoom)
+                                .coerceIn(0f, contentHeight - visibleHeight)
+                        } else {
+                            panX += event.x - lastX
+                            panY += event.y - lastY
+                        }
                         invalidate()
                     }
                 }
@@ -1037,6 +1192,7 @@ internal class BlueprintGraphView(context: Context) : View(context) {
             }
             MotionEvent.ACTION_UP -> {
                 parent?.requestDisallowInterceptTouchEvent(false)
+                // GestureDetector dispatches the actual confirmed tap; do not double-toggle.
                 performClick()
                 return true
             }
@@ -1045,6 +1201,7 @@ internal class BlueprintGraphView(context: Context) : View(context) {
                 return true
             }
             MotionEvent.ACTION_POINTER_UP -> {
+                moving = true
                 val index = if (event.actionIndex == 0 && event.pointerCount > 1) 1 else 0
                 lastX = event.getX(index)
                 lastY = event.getY(index)

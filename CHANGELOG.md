@@ -1,3 +1,10 @@
+## Inline graph device cards — 2026-10-13 (Android CI pending)
+
+- Based on the green Cover Flow baseline at commit `5d15dc9683ccb1b885471afbdb0ba1ffd0aa60bd` (Android run `38468092556`; build and launch-smoke successful) and owner screenshot of a working Fortnite overlay.
+- Replace the Graph's separate bottom settings inspector with an *in-place expandable node*. Tap a node to reveal its saved settings, notes and exact incoming/outgoing event-to-function bindings; tap it again to collapse. Only one node expands at once.
+- Clamp the expanded card to a compact, internally scrollable details viewport; keep graph pan, pinch, Fit, long-press direct-neighbor Connection Focus and empty-space double-tap focus clear. Expanded card is drawn on top only temporarily, without modifying saved graph positions or event wiring.
+- Include pure JVM data/geometry checks and an Android bitmap rendering regression test. This source candidate is not yet Android lint/CI/phone certified. No Room, `.c1logic`, signing, permissions, service, simulator, or device catalog changes.
+
 ## Cover Flow accessibility Lint fix — 2026-10-13 (CI pending)
 
 - GitHub Android run `38466392646` at commit `890c6ff4` compiled the overlay but **failed** strict `:app:lintDebug` with one `ClickableViewAccessibility` error at `BlueprintOverlayService.kt:427`. Emulator `launch-smoke` was skipped; this run was not green.
