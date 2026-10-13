@@ -13,7 +13,25 @@ import java.util.UUID
     val formatVersion: Int = 2, val appVersion: String, val catalogVersion: String,
     val mechanicMetadata: MechanicMetadataV1, val devices: List<DeviceInstanceDtoV1>,
     val bindings: List<BindingDtoV2>, val viewport: ViewportDtoV2, val notes: String,
+    // Optional within document format 2: legacy documents have no folders field.
+    val folders: List<BlueprintFolderV1> = emptyList(),
 )
+
+/** A folder contains stable device IDs; it does not add or reroute any event connection. */
+fun validateBlueprintFolders(folders: List<BlueprintFolderV1>, graph: MechanicGraph) {
+    val deviceIds = graph.devices.map { it.id }.toSet()
+    require(folders.map { it.id }.distinct().size == folders.size) { "Duplicate folder ID" }
+    val occupied = mutableSetOf<String>()
+    folders.forEach { folder ->
+        require(folder.folderFormatVersion == 1) { "Unsupported folder format" }
+        require(UUID.fromString(folder.id).toString() == folder.id) { "Invalid folder ID" }
+        require(folder.name.isNotBlank() && folder.name.length <= 60) { "Folder name must be 1–60 characters" }
+        require(folder.deviceIds.isNotEmpty()) { "Empty folder" }
+        require(folder.deviceIds.distinct().size == folder.deviceIds.size) { "Repeated folder device" }
+        require(folder.deviceIds.all { it in deviceIds }) { "Folder references missing device" }
+        require(folder.deviceIds.all { occupied.add(it) }) { "Device belongs to multiple folders" }
+    }
+}
 
 class MechanicGraphCodec(private val catalog: DeviceCatalog) {
     private val json = Json { encodeDefaults = true }
@@ -23,6 +41,7 @@ class MechanicGraphCodec(private val catalog: DeviceCatalog) {
         require(mechanic.mechanicMetadata.name.isNotBlank())
         require(mechanic.catalogVersion == catalog.catalogVersion) { "Unsupported catalog version" }
         validateGraph(mechanic.graph, catalog)
+        validateBlueprintFolders(mechanic.folders, mechanic.graph)
     }
     fun encode(mechanic: SavedMechanic): String {
         validate(mechanic)
@@ -30,7 +49,8 @@ class MechanicGraphCodec(private val catalog: DeviceCatalog) {
         return json.encodeToString(MechanicDocumentDtoV2(appVersion = mechanic.appVersion, catalogVersion = mechanic.catalogVersion,
             mechanicMetadata = mechanic.mechanicMetadata, devices = mechanic.graph.devices.map(instances::toDto),
             bindings = mechanic.graph.connections.map { BindingDtoV2(it.id, it.sourceDeviceId, it.sourceEventId.value, it.targetDeviceId, it.targetFunctionId.value) },
-            viewport = ViewportDtoV2(viewport.panX, viewport.panY, viewport.zoom), notes = mechanic.notes))
+            viewport = ViewportDtoV2(viewport.panX, viewport.panY, viewport.zoom), notes = mechanic.notes,
+            folders = mechanic.folders))
     }
     fun decode(source: String): SavedMechanic {
         val version = json.parseToJsonElement(source).jsonObject.getValue("formatVersion").jsonPrimitive.int
@@ -46,6 +66,6 @@ class MechanicGraphCodec(private val catalog: DeviceCatalog) {
         require(dto.devices.all { it.catalogVersion == dto.catalogVersion }) { "Mismatched device catalog versions" }
         val graph = MechanicGraph(dto.devices.map(instances::fromDto), dto.bindings.map { LogicConnection(it.id, it.sourceDeviceId, DeviceEventId(it.sourceEventId), it.targetDeviceId, DeviceFunctionId(it.targetFunctionId)) },
             GraphViewport(dto.viewport.panX, dto.viewport.panY, dto.viewport.zoom))
-        return SavedMechanic(dto.mechanicMetadata, dto.appVersion, catalog.catalogVersion, graph, dto.notes).also(::validate)
+        return SavedMechanic(dto.mechanicMetadata, dto.appVersion, catalog.catalogVersion, graph, dto.notes, dto.folders).also(::validate)
     }
 }

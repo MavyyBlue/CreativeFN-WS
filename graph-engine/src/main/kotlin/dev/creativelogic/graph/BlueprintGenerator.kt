@@ -18,6 +18,7 @@ data class Blueprint(
     val mechanicId: String, val name: String, val quantities: List<Pair<String, Int>>,
     val devices: List<BlueprintDevice>, val bindings: List<BlueprintBinding>,
     val steps: List<String>, val warnings: List<String>,
+    val folders: List<BlueprintFolderV1> = emptyList(),
 )
 
 object BlueprintGenerator {
@@ -68,7 +69,7 @@ object BlueprintGenerator {
         }
         if (mapped.isEmpty()) diagnostics += "This mechanic has no devices. Add devices before building."
         return Blueprint(mechanic.mechanicMetadata.id, mechanic.mechanicMetadata.name,
-            quantities, mapped, connections, steps, diagnostics.distinct())
+            quantities, mapped, connections, steps, diagnostics.distinct(), mechanic.folders)
     }
 
     private fun format(value: DeviceOptionValue): String = when (value) {

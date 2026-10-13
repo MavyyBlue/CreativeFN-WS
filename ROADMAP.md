@@ -10,10 +10,10 @@ Implementation status is based on source inspection and local checks. **Only Git
 | 3.1–3.2 | Deterministic sandbox, manual test actions, trace and state inspection | Phase 3.2 certified CI and owner accepted on Android |
 | 4 | Expanded catalog, live verification | Deferred: only 8 existing devices; no fabricated support |
 | 5 | Validation, actionable debug | Graph invariant checks and simulator trace already exist; comprehensive UX not completed |
-| 6 | Local mechanics, search, portable import/export, folders | Existing persistent searchable Library + new .c1logic document picker import/export; folders and thumbnails deferred |
+| 6 | Local mechanics, search, portable import/export, folders | Existing persistent searchable Library and .c1logic import/export; per-mechanic device folders (candidate), Library-wide folders and thumbnails deferred |
 | 7 | Fortnite construction guide | New shared guide generator with device quantities, configured values, bindings, sequence, checklist, caveats; **first release CI passed; additional phone checks pending** |
-| 8 | Android system overlay | New explicitly started foreground service and TYPE_APPLICATION_OVERLAY bubble/panel with drag, graph zoom/pan, step persistence, notification Stop; **Android CI green; Fortnite overlay visible, Graph and sizing follow-up unverified** |
-| 9 | UX/lifecycle hardening | Initial orientation fitting, saved step/bubble location and passive lifecycle; profiling/full soak testing pending |
+| 8 | Android system overlay | New explicitly started foreground service and TYPE_APPLICATION_OVERLAY bubble/panel with drag, graph zoom/pan, step persistence, notification Stop; **Android CI green for previous build; owner confirms compact landscape Graph renders; new Links/focus features CI pending** |
+| 9 | UX/lifecycle hardening | Initial sizing, step/bubble persistence and passive lifecycle; interactive overlay device inspector + connection focus candidate; profiling pending |
 
 ## Immediate Android acceptance gate
 
@@ -21,4 +21,8 @@ Import this source ZIP, confirm GitHub Actions build and emulator jobs pass, the
 
 ## Real-device feedback / next focused acceptance
 
-GitHub Android run `38435563960` (commit `6efa671`) is **green**, and the owner demonstrated the overlay above Fortnite in landscape with working Steps, Devices and Links. Phase 8 is partially phone-accepted, not fully completed: the graph was blank, and the expanded window consumed most of the game view. A follow-up code candidate (CI pending) reduces landscape size, provides in-overlay per-orientation size controls and tab-bar collapse, and repairs graph fitting plus tests. Next validate graph nodes/links, drag, pinch/fit, on-screen resizing, saved size/checklist and Fortnite touch pass-through on actual Android. Do not mark Phase 8 complete until that evidence arrives.
+GitHub Android run `38435563960` (commit `6efa671`) is **green**, and the owner demonstrated the overlay above Fortnite in landscape with working Steps, Devices and Links. Phase 8 is partially phone-accepted, not fully completed: the graph was blank, and the expanded window consumed most of the game view. The compact candidate passed Android CI `38441055829` at commit `ac754adf`; the owner then confirmed its visible nodes, link and slider controls over Fortnite. Next validate the new Links directory, direct-connection focus, folders, return-to-editor saving and outside-touch pass-through on actual Android. Do not mark Phase 8 complete until that evidence arrives.
+
+## Next phone gate: connection explorer and graph focus
+
+Owner screenshots after the compact sizing correction confirm the graph, nodes, wire and width/height sliders above Fortnite. New patch (CI pending): Steps/Links/Graph navigation; Links device explorer + named, non-destructive organizational folders; graph tap-to-inspect and long-press one-hop focus; double-tap blank to clear. Folder storage is additive inside the existing format-2 `.c1logic` document and Room schema 1 stays unchanged. Verify folder name keyboard focus returns Fortnite touch behavior, export/reimport and edit-save folder retention. Do not mark this candidate certified before Android CI and separate phone evidence.

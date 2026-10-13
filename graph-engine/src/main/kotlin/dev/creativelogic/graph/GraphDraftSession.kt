@@ -5,6 +5,7 @@ import dev.creativelogic.model.*
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
@@ -28,7 +29,14 @@ class GraphDraftSession(
         if (snapshot == saved) { mutableStatus.value = GraphSaveStatus.SAVED; return@withLock true }
         mutableStatus.value = GraphSaveStatus.SAVING
         try {
-            repository.save(document.copy(appVersion = appVersion, graph = snapshot,
+            // Overlay folder edits may have been saved while this editor session was backgrounded.
+            // Always merge the latest folder metadata, never overwrite it with an older editor snapshot.
+            val latest = repository.observeAll().first().firstOrNull { it.mechanicMetadata.id == document.mechanicMetadata.id }
+            val retainedFolders = (latest?.folders ?: document.folders).mapNotNull { folder ->
+                val stillPresent = snapshot.devices.map { it.id }.toSet()
+                folder.copy(deviceIds = folder.deviceIds.filter { it in stillPresent }).takeIf { it.deviceIds.isNotEmpty() }
+            }
+            repository.save(document.copy(appVersion = appVersion, graph = snapshot, folders = retainedFolders,
                 mechanicMetadata = document.mechanicMetadata.copy(modifiedAtEpochMillis = now())))
             saved = snapshot
             mutableStatus.value = if (editor.graph == snapshot) GraphSaveStatus.SAVED else GraphSaveStatus.PENDING

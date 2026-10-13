@@ -21,3 +21,11 @@
 - Replaces large stock toolbar/nav buttons with smaller touch targets, adds a persistent Tabs hide/show toggle and collapses verbose verification warnings behind an on-demand control.
 - Reworks graph auto-fit using actual view-pixel geometry rather than multiplying device coordinates by density twice, makes zoom focus follow pinch gestures, and provides a Fit graph action; includes a graph-render instrumentation regression test and pure JVM geometry tests.
 - Existing Room schema, saved documents, catalog, service permission/special-use declaration, simulator and signing remain untouched. Changes require new Android CI and phone retest; no claim of success for this new candidate.
+
+## Device explorer and Connection Focus — 2026-10-13 (CI candidate)
+- Following owner acceptance of a compact visible graph over Fortnite, keep three overlay tabs: Steps, Links and Graph. Devices configuration and exact binding labels are available from a graph node's tap-to-inspect sheet; the separate Devices tab is removed from the overlay.
+- Rebuild Links as a per-device directory with readable incoming/outgoing event-to-function bindings, direct-neighbor folder suggestions, explicit membership selection, named folders, rename and non-destructive ungroup.
+- Store organizational folders in an additive, optional `folders` field of existing mechanic JSON format 2 (`BlueprintFolderV1` metadata v1). No Room migration, event wiring mutation, device ID change or engine behavior change; `.c1logic` export/import round-trips the folders.
+- Merge latest folder metadata on editor saves so returning from Fortnite and changing the graph does not accidentally erase groups. Remove references to devices subsequently deleted in editor.
+- Long-press a graph node to focus only that node and its immediate incoming/outgoing neighbors; unrelated cards and wires dim but remain interactable. Double-tap empty graph space to clear focus. Pinch/pan, Fit and overlay size controls remain.
+- Added pure-JVM adjacency and folder/codec tests. Android Gradle, lint, emulator and on-phone Fortnite UX are **not yet certified** for this candidate.
