@@ -1,19 +1,20 @@
 # Roadmap — CreativeFN WS
 
-Advance phases only after implementation + full GitHub Actions evidence; Android UX also requires owner phone checks. Fortnite fidelity requires separate in-game comparison.
+Implementation status is based on source inspection and local checks. **Only GitHub Actions plus owner phone checks certify Android behavior**; simulator behavior is NOT 1:1 Fortnite certified.
 
-| Phase | Scope | Verified status (2026-10-12) |
+| Phase | Scope | Source status (2026-10-13) |
 |---|---|---|
-| 0 | Android foundation, storage, CI | Established |
-| 1 | Typed Creative 1.0 catalog | 3 original prototypes implemented; 5 new documentation-grounded reference entries in Phase 3.2 candidate; live fidelity pending |
-| 2 | Graph editor, bindings, undo/redo, autosave | Android CI 38311622832 green; owner has used app; detailed gesture/performance acceptance open |
-| 3.1 | Deterministic runtime core | CI 38316188825 green at 4ce239c; newly installed APK launched on phone, UI unchanged by design |
-| 3.2 | Test scene, external actions, collapsible console, HUD golden, catalog expansion | **Source candidate in preparation**; runtime harness passed, full Android CI + phone acceptance pending |
-| 4 | Incrementally verify expanded devices in Fortnite | Not completed: added reference entries are not certified device simulations |
-| 5 | Full diagnostics | Not started |
-| 6 | Folders, thumbnails, portable .c1logic import/export | Basic drafts/search exist; portable delivery not started |
-| 7 | Generated build guides | Not started |
-| 8 | Passive Android reference overlay | Not started |
-| 9 | Profiling/mobile polish | Not started |
+| 0 | Android, Room, CI, mobile source importer | Certified through CI run 38338236226 |
+| 1 | Device catalog (8 scoped devices) | Established, live Fortnite fidelity pending |
+| 2 | Canvas, direct bindings, history, autosave | Established, CI certified |
+| 3.1–3.2 | Deterministic sandbox, manual test actions, trace and state inspection | Phase 3.2 certified CI and owner accepted on Android |
+| 4 | Expanded catalog, live verification | Deferred: only 8 existing devices; no fabricated support |
+| 5 | Validation, actionable debug | Graph invariant checks and simulator trace already exist; comprehensive UX not completed |
+| 6 | Local mechanics, search, portable import/export, folders | Existing persistent searchable Library + new .c1logic document picker import/export; folders and thumbnails deferred |
+| 7 | Fortnite construction guide | New shared guide generator with device quantities, configured values, bindings, sequence, checklist, caveats; **remote CI/phone pending** |
+| 8 | Android system overlay | New explicitly started foreground service and TYPE_APPLICATION_OVERLAY bubble/panel with drag, graph zoom/pan, step persistence, notification Stop; **remote CI, device/game restrictions, and phone pending** |
+| 9 | UX/lifecycle hardening | Initial orientation fitting, saved step/bubble location and passive lifecycle; profiling/full soak testing pending |
 
-Next gate: import Phase 3.2 source ZIP, verify the **expanded tested SHA** and both Android CI jobs. Then real-phone test the Simulate / Design toggle and actions/console against a newly saved graph without uninstalling the existing app. No signing workflow/key changes belong in this slice. Device port provenance and unsupported configurations: [FORTNITE_FIDELITY.md](FORTNITE_FIDELITY.md).
+## Immediate Android acceptance gate
+
+Import this source ZIP, confirm GitHub Actions build and emulator jobs pass, then check signature continuity before install. On phone: save graph → Blueprints → Guide → overlay permission → Fortnite → bubble → Steps/Devices/Links/Graph → collapse/reopen/Stop → return and edit. Record whether Fortnite or OEM suppresses the overlay. No separate signing workflow changes. Do not call an uncertified overlay a confirmed working release.

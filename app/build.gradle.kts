@@ -22,8 +22,6 @@ android {
     }
     lint {
         warningsAsErrors = true
-        // Reproducible builds use tested pins, not live repository version advisories.
-        // Rationale and upgrade procedure: QA.md, "Dependency version advisories".
         disable += setOf("AndroidGradlePluginVersion", "GradleDependency", "NewerVersionAvailable")
     }
 }

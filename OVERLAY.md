@@ -1,23 +1,9 @@
-# Passive overlay boundary
+# Passive blueprint overlay — Android source candidate (2026-10-13)
 
-Not implemented or declared in the Phase 0 manifest. No overlay permission is
-requested on launch. The current application has no network or game access permissions.
+A user starts a real `TYPE_APPLICATION_OVERLAY` via **Blueprints → Overlay**, after manually granting Android Draw Over Other Apps. A `specialUse` foreground service holds a visible notification with **Stop Overlay**. Starting happens from the foreground app, never on boot. The service holds an immutable JSON snapshot of the saved mechanic, generated with the same `BlueprintGenerator` used by the in-app guide. It runs no simulator, polls no files and accesses no Fortnite data.
 
-Phase 8 uses a manually started TYPE_APPLICATION_OVERLAY window and foreground
-service where required. Request Draw Over Other Apps only after explicit selection
-of overlay mode, explain its purpose, and recheck permission before adding a window.
-Provide a persistent notification with an immediately effective Stop Overlay action.
-Review current API 37 foreground-service policy when implementing the service.
+The FN bubble can be dragged, expanded to a compact panel, or collapsed; the panel has touch-friendly Steps, Devices, Links and zoom/pan Graph. Bubble/panel coordinates, selected mechanic and step/checklist state are stored locally. The window fits updated display bounds on configuration changes. Both expanded and collapsed windows receive touches only within their own window rectangles, via `FLAG_NOT_FOCUSABLE` + `FLAG_NOT_TOUCH_MODAL`. The stop action removes the view and foreground service. If Android kills the service, the user launches it again deliberately; there is no restart loop.
 
-Bubble touches stay within the window bounds. Mini graph and guide panels support
-drag, resize, collapse, expand, opacity, lock and orientation changes. Persist
-position, size, current step and completion. Clamp restored windows into current
-screen bounds. The overlay displays only a manually selected saved mechanic.
-Load it into an immutable compact model; no simulation, continuous graph animation,
-network requests, database polling or idle recomposition loops while backgrounded.
+Android 14+ requires manifest `FOREGROUND_SERVICE_SPECIAL_USE`, subtype declaration and the correct service flag. Android 15+ removes the broad background-FGS exemption for overlay permission unless a visible overlay is already present; start this service through the visible Activity. Some OEMs, battery management, anti-cheat/game policies and apps using Android `HIDE_OVERLAY_WINDOWS` may prevent drawing above Fortnite even after permission. This is not overridable and **requires real-device Fortnite testing**. No accessibility, screenshot, touch injection, root, network, or game-process integration is used.
 
-Never inject, hook, inspect process memory/files/network traffic, automate controls
-or taps, use AccessibilityService, capture screens, OCR gameplay, infer live game
-state, modify Fortnite, act as a macro or provide competitive gameplay assistance.
-The companion never communicates with the Fortnite client. Real-phone landscape
-interaction and stop behavior are required acceptance evidence for Phase 8.
+Manual checks: permission denied/allowed, expanded/collapsed in portrait and landscape, pinch and pan, touch pass-through outside bounds, all notification Stop routes, switching blueprints, game background and app return, process death/relaunch, device-specific game overlay visibility, and Android signing continuity.
