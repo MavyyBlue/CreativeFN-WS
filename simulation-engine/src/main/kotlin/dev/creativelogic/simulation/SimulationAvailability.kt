@@ -1,7 +1,8 @@
 package dev.creativelogic.simulation
 
-/** UI-facing gate: experimental JVM prototype is NOT yet an accepted simulator. */
+/** Narrow in-app test scene exists; complete Fortnite-verified simulation does not. */
 object SimulationAvailability {
+    const val isPrototypeAvailable: Boolean = true
     const val isImplemented: Boolean = false
-    const val explanation: String = "Experimental local runtime tests are in progress. No verified Fortnite simulation or simulator UI is available yet."
+    const val explanation: String = "A local deterministic test scene is available for a limited Epic-documented device subset. Fortnite 1:1 fidelity is not certified."
 }

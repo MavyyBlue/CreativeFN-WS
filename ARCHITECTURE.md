@@ -80,3 +80,9 @@ until requested. ModalNavigationDrawer owns Recent search/scroll/selection; the
 Recent destination is offered only after observed saved data is nonempty. No
 recent cards are rendered on Home. Catalog reference screens use the same typed
 definitions tested on the JVM. Only brief support badges remain inline.
+
+## Phase 3.2 candidate — snapshot test scene and catalog compatibility
+
+GraphEditorScreen captures a frozen `MechanicGraph` snapshot on Simulate; `PrototypeSimulatorOverlay` creates a session from that snapshot. The Compose layer explicitly invalidates view state after each synchronous queued input/step/resume/reset; Android-free simulation never calls Compose, Room, Android APIs, or Fortnite. Scene graph remains pannable while edits are locked, and output/actions overlays are in-app only. Rotation currently returns to Design; session runtime is intentionally ephemeral.
+
+Catalog `0.2.0-draft` adds HUD Message, Button, Round Settings, Creature Manager, Elimination Manager as narrow prototype subsets based on official Epic documentation. `DeviceInstanceCodec` and `MechanicGraphCodec` explicitly accept earlier 0.1 graph-2/device DTOs for the three original types and upgrade them to 0.2 on read; format 1 legacy migration still works. No Room schema change. Follow `FORTNITE_FIDELITY.md` for unsupported semantics and evidence requirements.

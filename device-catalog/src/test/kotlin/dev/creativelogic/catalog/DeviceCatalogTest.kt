@@ -11,7 +11,7 @@ class DeviceCatalogTest {
         try { action(); fail("Expected rejection") } catch (_: IllegalArgumentException) { }
     }
     @Test fun catalogHasUniqueTypedPortsAndHonestVersionMetadata() {
-        assertEquals(listOf("trigger", "tracker", "barrier"), catalog.definitions.map { it.deviceTypeId })
+        assertEquals(listOf("trigger", "tracker", "barrier", "hud-message", "button", "round-settings", "creature-manager", "elimination-manager"), catalog.definitions.map { it.deviceTypeId })
         assertEquals(1, catalog.catalogSchemaVersion)
         assertNull(catalog.lastVerifiedDate); assertNull(catalog.fortniteReferenceVersion)
         catalog.definitions.forEach { d ->
@@ -61,7 +61,7 @@ class DeviceCatalogTest {
         val codec = DeviceInstanceCodec(catalog)
         val source = codec.encode(catalog.createInstance("trigger", "Key"))
         rejects { codec.decode(source.replace("\"formatVersion\":1", "\"formatVersion\":2")) }
-        rejects { codec.decode(source.replace("0.1.0-draft", "future")) }
+        rejects { codec.decode(source.replace("0.2.0-draft", "future")) }
         rejects { codec.decode(source.replace("\"value\":true", "\"value\":\"true\"")) }
         rejects { codec.decode(source.replace("\"type\":\"boolean\"", "\"type\":\"unknown\"")) }
     }

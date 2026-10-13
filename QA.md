@@ -226,3 +226,15 @@ run must pass after import; do not claim them for the candidate yet.
 Full Three-Key Vault requires HUD Message, which is absent; this first fixture
 is explicitly named `three-key-vault-core`. UI and physical-phone simulator
 acceptance remain pending. Prototype rules are not evidence of Fortnite fidelity.
+
+
+## Phase 3.2 candidate acceptance ledger (2026-10-12)
+
+- Certified starting point: Android run 38316188825 at 4ce239c: full Gradle build/lint and ten emulator tests green. Owner independently reinstalled Phase 3.1 APK and confirmed app launched with existing UI; uninstallation likely cleared older private data.
+- New JVM tests: existing eleven Phase 3.1 engine tests + five `ScenarioActionsTest` tests = 16/16 successful in a local Kotlin/JVM harness with lightweight model/JUnit stubs. This is *not* a full Gradle/Android result.
+- Also added `EpicPortReferenceTest` (official event/function identifiers) and migration regression in `MechanicGraphCodecTest`. Require full CI to execute these.
+- Full golden expected trace `three-key-vault-phase32.trace` includes three one-use Trigger inputs, Tracker onComplete, Barrier disable and HUD show exactly once; fails on trace drift.
+- New emulator/UI gate: open saved mechanic → Simulate, open Actions, Game Start, Trigger/Interact, Run/Step, inspect Output; validate readable layout on portrait/landscape with keyboard and screen-reader, console collapse/expand, pan/zoom, no runtime state persistence, return to Design, saved graph unchanged.
+- Negative tests: unsupported Tracker Individual / HUD target displays actionable rejection; disabled/one-use Button ignores repeats; no creature/player conflation; same inputs produce identical traces; intentional cycles stop with warning.
+- Per-device **actual Fortnite** acceptance remains unperformed; no 1:1 claim permitted until evidence in `FORTNITE_FIDELITY.md` is collected.
+- Signing and Room remain unchanged. Do not uninstall the user's functioning app as part of this CI gate.

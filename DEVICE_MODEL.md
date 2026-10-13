@@ -44,3 +44,7 @@ timing and multiplayer semantics remain unverified. Prototype runtime rejects
 unsupported Individual/Team tracker sharing, non-Off HUD presentation, game
 phase-only barrier modes, and zero target. HUD Message is not yet defined.
 See SIMULATION.md for the precise sandbox contract and test evidence.
+
+## Phase 3.2 reference extension (uncertified source candidate)
+
+Catalog `0.2.0-draft` contains eight entries: the original Trigger/Tracker/Barrier and five newly selected Epic devices: HUD Message, Button, Round Settings, Creature Manager, Elimination Manager. Only documented direct-event-binding ports are exposed; the supported option subset is explicitly small. Existing 0.1.0-draft graph-2/device DTOs for old devices migrate without destructive database changes. Full Fortnite behaviors are **NOT** represented, and `SimulationSupport.NOT_SIMULATED` remains correct; local test-scene exercises are not 1:1 claims. See `FORTNITE_FIDELITY.md` and `SIMULATION.md`.

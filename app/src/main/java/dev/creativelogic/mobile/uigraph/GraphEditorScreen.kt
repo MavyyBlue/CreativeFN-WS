@@ -16,6 +16,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.creativelogic.graph.*
 import dev.creativelogic.mobile.ui.InformationButton
+import dev.creativelogic.mobile.uisimulator.PrototypeSimulatorOverlay
 import dev.creativelogic.model.*
 import kotlinx.coroutines.launch
 import kotlin.math.*
@@ -43,6 +44,8 @@ private fun GraphEditorContent(session: GraphDraftSession) {
     var source by rememberSaveable { mutableStateOf<String?>(null) }
     var event by rememberSaveable { mutableStateOf<String?>(null) }
     var canvasSize by remember { mutableStateOf(Size.Zero) }
+    // Capture a fixed configuration when entering the test scene; no runtime data is stored.
+    var simulatorGraph by remember { mutableStateOf<MechanicGraph?>(null) }
     val density = LocalDensity.current.density
     fun change(action: () -> Unit) {
         try { action(); session.markDirty() }
@@ -65,17 +68,21 @@ private fun GraphEditorContent(session: GraphDraftSession) {
     LaunchedEffect(graph.devices) { if (graph.devices.none { it.id == source }) { source = null; event = null } }
     Column(Modifier.fillMaxSize().padding(8.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Text("Logic canvas", Modifier.weight(1f), style = MaterialTheme.typography.titleMedium)
-            InformationButton("Logic canvas", "Drag a device to move it. Drag empty space to pan; pinch to zoom. Tap a device for settings, or hold it for actions. Tap an Event then a Function to bind them, or use Bindings. These devices are reference-only: simulation is not available yet.")
+            Text(if (simulatorGraph == null) "Logic canvas" else "Prototype scene", Modifier.weight(1f), style = MaterialTheme.typography.titleMedium)
+            TextButton(onClick = {
+                simulatorGraph = if (simulatorGraph == null) graph.copy() else null
+                palette = false; bindings = false; selected = null; context = null; source = null; event = null
+            }, modifier = Modifier.testTag("graph-simulation-toggle")) { Text(if (simulatorGraph == null) "Simulate" else "Design") }
+            InformationButton("Logic canvas", "Design: drag to place, pan/pinch to navigate, tap to configure and connect ports. Simulate: test an isolated snapshot with external actions, Step/Run and a collapsible output. The sandbox is NOT yet verified 1:1 with Fortnite.")
         }
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+        if (simulatorGraph == null) Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
             TextButton(onClick = { palette = true }, modifier = Modifier.testTag("graph-devices")) { Text("Devices") }
             TextButton(onClick = { bindings = true }, modifier = Modifier.testTag("graph-bindings")) { Text("Bindings") }
             TextButton(onClick = { scope.launch { session.saveLatest() } }, modifier = Modifier.testTag("graph-save-button")) {
                 Text(when (status) { GraphSaveStatus.SAVED -> "Saved"; GraphSaveStatus.SAVING -> "Saving…"; else -> "Save" })
             }
         }
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+        if (simulatorGraph == null) Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
             TextButton(onClick = { change { session.editor.undo() } }, enabled = session.editor.canUndo, modifier = Modifier.testTag("graph-undo")) { Text("Undo") }
             TextButton(onClick = { change { session.editor.redo() } }, enabled = session.editor.canRedo, modifier = Modifier.testTag("graph-redo")) { Text("Redo") }
             TextButton(onClick = { fit() }, enabled = graph.devices.isNotEmpty()) { Text("Fit") }
@@ -87,8 +94,15 @@ private fun GraphEditorContent(session: GraphDraftSession) {
         }
         Box(Modifier.fillMaxWidth().weight(1f).clip(MaterialTheme.shapes.large).background(MaterialTheme.colorScheme.surfaceContainerLow)
             .onSizeChanged { canvasSize = Size(it.width.toFloat(), it.height.toFloat()) }) {
-            LogicCanvas(graph, source, { selected = it }, { context = it }, ::selectEvent, ::connect,
-                { id, x, y -> change { session.editor.move(id, x, y) } }, { session.editor.viewport(it); session.markDirty() })
+            if (simulatorGraph == null) {
+                LogicCanvas(graph, source, { selected = it }, { context = it }, ::selectEvent, ::connect,
+                    { id, x, y -> change { session.editor.move(id, x, y) } }, { session.editor.viewport(it); session.markDirty() })
+            } else {
+                // Viewport remains navigable. Moving/configuring devices is locked while testing.
+                LogicCanvas(graph, null, { }, { }, { _, _ -> }, { _, _ -> },
+                    { _, _, _ -> }, { session.editor.viewport(it); session.markDirty() }, readOnly = true)
+                PrototypeSimulatorOverlay(simulatorGraph!!)
+            }
         }
         SnackbarHost(snackbars)
     }

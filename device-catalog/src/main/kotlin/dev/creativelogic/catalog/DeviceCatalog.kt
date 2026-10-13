@@ -50,10 +50,12 @@ object InitialDeviceCatalog {
     private fun function(id: String, name: String) = DeviceFunctionDefinition(DeviceFunctionId(id), name)
     private fun device(id: String, name: String, category: String, options: List<DeviceOptionDefinition>, events: List<DeviceEventDefinition>, functions: List<DeviceFunctionDefinition>, path: String) = CreativeDeviceDefinition(
         id, name, category, options, events, functions, SimulationSupport.NOT_SIMULATED,
-        listOf("Reference only. Simulation is not available yet.", "These are prototype settings, not a verified copy of every Fortnite option or default."),
+        listOf("Epic documents these direct-binding ports. Only the displayed subset of options is represented.", "Experimental event-only sandbox; not verified 1:1 against a live Fortnite Creative island. Unrepresented game rules are not simulated."),
         "https://dev.epicgames.com/documentation/en-us/fortnite-creative/$path-in-fortnite-creative",
     )
-    val catalog = DeviceCatalog(1, "0.1.0-draft", null, null, listOf(
+    // 0.2 is additive. Legacy 0.1 graphs are migrated by the explicit wire decoders.
+    // Epic reference pages checked 2026-10-12; Fortnite live behavior remains unverified.
+    val catalog = DeviceCatalog(1, "0.2.0-draft", null, null, listOf(
         device("trigger", "Trigger", "Logic", listOf(
             bool("enabledOnGameStart", "Enabled on Game Start", true), bool("triggeredByPlayer", "Triggered by Player", true),
             integer("timesCanTrigger", "Times Can Trigger", 0),
@@ -66,5 +68,30 @@ object InitialDeviceCatalog {
         device("barrier", "Barrier", "World", listOf(
             enum("enabledDuringPhase", "Enabled During Phase", "Always", "None", "Always", "Pre-Game Only", "Gameplay Only"),
         ), emptyList(), listOf(function("enable", "Enable"), function("disable", "Disable")), "using-barrier-devices"),
+        // Ports are verbatim concepts from Epic's Direct Event Binding tables.
+        // Option lists contain ONLY the narrow subset modeled by our deterministic sandbox.
+        device("hud-message", "HUD Message", "Presentation", listOf(
+            DeviceOptionDefinition("message", "Message", DeviceOptionKind.TEXT, DeviceOptionValue.TextValue("Vault open!")),
+            bool("showOnRoundStart", "Show on Round Start", false),
+        ), emptyList(), listOf(function("show", "Show"), function("hide", "Hide")), "using-hud-message-devices"),
+        device("button", "Button", "Input", listOf(
+            bool("enabledAtGameStart", "Enabled at Game Start", true),
+            integer("timesCanTrigger", "Times Can Trigger (0 = Infinite)", 0),
+        ), listOf(event("onInteract", "On Interact")), listOf(function("enable", "Enable"), function("disable", "Disable")), "using-button-devices"),
+        device("round-settings", "Round Settings", "Game", listOf(
+            enum("round", "Round", "All", "All", "1"),
+            bool("enabledOnMinigameStart", "Enabled On Minigame Start", true),
+        ), listOf(event("onRoundStart", "On Round Start")), emptyList(), "using-round-settings-devices"),
+        device("creature-manager", "Creature Manager", "Creatures", listOf(
+            enum("creatureType", "Creature Type", "Fiend", "Fiend"),
+            bool("enabledOnGameStart", "Enabled on Game Start", true),
+        ), listOf(event("onMatchingCreatureTypeEliminated", "On a Matching Creature Type Is Eliminated")),
+            listOf(function("enable", "Enable"), function("disable", "Disable")), "using-creature-manager-devices"),
+        device("elimination-manager", "Elimination Manager", "Eliminations", listOf(
+            bool("enabledAtGameStart", "Enabled At Game Start", true),
+            enum("targetType", "Target Type", "Players Only", "Players Only"),
+            bool("validOnSelfElimination", "Valid on Self-Elimination", false),
+        ), listOf(event("onEliminated", "On Eliminated"), event("onElimination", "On Elimination")),
+            listOf(function("enable", "Enable"), function("disable", "Disable")), "using-elimination-manager-devices"),
     ))
 }

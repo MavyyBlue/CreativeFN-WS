@@ -31,7 +31,10 @@ class DeviceInstanceCodec(private val catalog: DeviceCatalog) {
     }
     fun fromDto(dto: DeviceInstanceDtoV1): CreativeDeviceInstance {
         require(dto.formatVersion == 1) { "Unsupported device format" }
-        require(dto.catalogVersion == catalog.catalogVersion) { "Unsupported catalog version; migration required" }
+        require(dto.catalogVersion == catalog.catalogVersion ||
+            (dto.catalogVersion == "0.1.0-draft" && dto.deviceTypeId in setOf("trigger", "tracker", "barrier"))) {
+            "Unsupported catalog version; migration required"
+        }
         return CreativeDeviceInstance(dto.id, dto.deviceTypeId, dto.name, dto.graphX, dto.graphY,
             dto.options.mapValues { (_, value) -> decodeOption(value) }, dto.notes).also(catalog::validate)
     }

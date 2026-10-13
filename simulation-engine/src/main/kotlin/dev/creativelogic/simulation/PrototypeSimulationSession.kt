@@ -18,6 +18,10 @@ class PrototypeSimulationSession(
     private sealed interface Action {
         data class ManualTrigger(val deviceId: String) : Action
         data class FunctionCall(val deviceId: String, val function: String) : Action
+        data object GameStart : Action
+        data class ButtonInteract(val deviceId: String) : Action
+        data class PlayerElimination(val victimId: String, val eliminatorId: String) : Action
+        data class CreatureElimination(val creatureType: String) : Action
     }
 
     private data class QueuedAction(
@@ -37,6 +41,8 @@ class PrototypeSimulationSession(
     private var lastTick = -1L
     private var mutableTrace = mutableListOf<SimulationTraceEntry>()
     private var mutableStates: Map<String, DeviceRuntimeState> = emptyMap()
+    var gameStarted: Boolean = false
+        private set
 
     var clockMillis: Long = 0
         private set
@@ -65,6 +71,7 @@ class PrototypeSimulationSession(
                 "barrier" -> require(device.optionEnum("enabledDuringPhase") in setOf("Always", "None")) {
                     "Prototype barrier supports only Always or None; game phases are not modeled"
                 }
+                "hud-message", "button", "round-settings", "creature-manager", "elimination-manager" -> Unit
                 else -> throw IllegalArgumentException("Prototype runtime does not support ${device.deviceTypeId}")
             }
         }
@@ -84,6 +91,30 @@ class PrototypeSimulationSession(
         require(actorId.isNotBlank()) { "An actor ID is required" }
         require(afterMillis >= 0) { "A negative virtual delay is invalid" }
         enqueue(Math.addExact(clockMillis, afterMillis), 0, actorId, Action.ManualTrigger(deviceId))
+    }
+
+    /** External actions are events in a local, explicitly limited test world—not Fortnite state. */
+    fun startGame() = externalAction("game-start", Action.GameStart)
+
+    fun interactButton(deviceId: String, actorId: String = "player-1") {
+        require(deviceById[deviceId]?.deviceTypeId == "button") { "Select a Button device" }
+        externalAction(actorId, Action.ButtonInteract(deviceId))
+    }
+
+    fun playerEliminated(victimId: String = "player-2", eliminatorId: String = "player-1") {
+        require(victimId.isNotBlank() && eliminatorId.isNotBlank())
+        externalAction(eliminatorId, Action.PlayerElimination(victimId, eliminatorId))
+    }
+
+    fun creatureEliminated(creatureType: String = "Fiend", actorId: String = "player-1") {
+        require(creatureType == "Fiend") { "Only the Fiend creature type is modeled" }
+        externalAction(actorId, Action.CreatureElimination(creatureType))
+    }
+
+    private fun externalAction(actorId: String, action: Action) {
+        require(status != SimulationStatus.POSSIBLE_EVENT_LOOP) { "Reset the halted session" }
+        require(actorId.isNotBlank())
+        enqueue(clockMillis, 0, actorId, action)
     }
 
     fun pause() { if (status != SimulationStatus.POSSIBLE_EVENT_LOOP) status = SimulationStatus.PAUSED }
@@ -106,6 +137,10 @@ class PrototypeSimulationSession(
         when (val action = next.action) {
             is Action.ManualTrigger -> fireTrigger(action.deviceId, next.actorId, next.depth, manual = true)
             is Action.FunctionCall -> invoke(action.deviceId, action.function, next.actorId, next.depth)
+            Action.GameStart -> beginGame(next.actorId, next.depth)
+            is Action.ButtonInteract -> interact(action.deviceId, next.actorId, next.depth)
+            is Action.PlayerElimination -> eliminatePlayer(action.victimId, action.eliminatorId, next.depth)
+            is Action.CreatureElimination -> eliminateCreature(action.creatureType, next.actorId, next.depth)
         }
         return true
     }
@@ -136,6 +171,11 @@ class PrototypeSimulationSession(
                 "trigger" -> TriggerRuntime(enabled = device.optionBoolean("enabledOnGameStart"))
                 "tracker" -> TrackerRuntime(assigned = device.optionBoolean("assignOnGameStart"))
                 "barrier" -> BarrierRuntime(enabled = device.optionEnum("enabledDuringPhase") == "Always")
+                "hud-message" -> HudMessageRuntime(visible = false)
+                "button" -> ButtonRuntime(enabled = device.optionBoolean("enabledAtGameStart"))
+                "round-settings" -> RoundSettingsRuntime(enabled = device.optionBoolean("enabledOnMinigameStart"))
+                "creature-manager" -> CreatureManagerRuntime(enabled = device.optionBoolean("enabledOnGameStart"))
+                "elimination-manager" -> EliminationManagerRuntime(enabled = device.optionBoolean("enabledAtGameStart"))
                 else -> error("Validated constructor must reject this device")
             }
             device.id to state
@@ -146,6 +186,7 @@ class PrototypeSimulationSession(
         processedInTick = 0
         lastTick = -1
         status = SimulationStatus.PAUSED
+        gameStarted = false
         loopWarning = null
     }
 
@@ -172,6 +213,8 @@ class PrototypeSimulationSession(
     private fun actionDeviceId(action: Action) = when (action) {
         is Action.ManualTrigger -> action.deviceId
         is Action.FunctionCall -> action.deviceId
+        Action.GameStart, is Action.PlayerElimination, is Action.CreatureElimination -> "scenario"
+        is Action.ButtonInteract -> action.deviceId
     }
 
     private fun record(at: Long, kind: TraceKind, device: String, detail: String, actor: String) {
@@ -188,6 +231,58 @@ class PrototypeSimulationSession(
         record(clockMillis, TraceKind.EVENT, id, event, actor)
         bindings[id to event].orEmpty().forEach { binding ->
             enqueue(clockMillis, depth + 1, actor, Action.FunctionCall(binding.targetDeviceId, binding.targetFunctionId.value))
+        }
+    }
+
+    private fun beginGame(actor: String, depth: Int) {
+        record(clockMillis, TraceKind.INPUT, "scenario", "Game Start (Round 1)", actor)
+        if (gameStarted) {
+            record(clockMillis, TraceKind.IGNORED, "scenario", "Game already started; Reset to restart", actor)
+            return
+        }
+        gameStarted = true
+        // The round-start event belongs to Round Settings, NOT to a fictional Game Start device.
+        graph.devices.filter { it.deviceTypeId == "round-settings" }.forEach { device ->
+            val state = mutableStates.getValue(device.id) as RoundSettingsRuntime
+            if (state.enabled && device.optionEnum("round") in setOf("All", "1"))
+                emit(device.id, "onRoundStart", actor, depth)
+        }
+        graph.devices.filter { it.deviceTypeId == "hud-message" && it.optionBoolean("showOnRoundStart") }.forEach { device ->
+            enqueue(clockMillis, depth + 1, actor, Action.FunctionCall(device.id, "show"))
+        }
+    }
+
+    private fun interact(id: String, actor: String, depth: Int) {
+        record(clockMillis, TraceKind.INPUT, id, "Button interact", actor)
+        val state = mutableStates.getValue(id) as ButtonRuntime
+        val limit = deviceById.getValue(id).optionInt("timesCanTrigger")
+        if (!state.enabled || (limit > 0 && state.interactions >= limit)) {
+            record(clockMillis, TraceKind.IGNORED, id, "Button unavailable", actor)
+            return
+        }
+        update(id, state.copy(interactions = state.interactions + 1,
+            enabled = limit == 0 || state.interactions + 1 < limit), actor,
+            "interactions=${state.interactions + 1}")
+        emit(id, "onInteract", actor, depth)
+    }
+
+    private fun eliminatePlayer(victim: String, eliminator: String, depth: Int) {
+        record(clockMillis, TraceKind.INPUT, "scenario", "Player Eliminated: $victim by $eliminator", eliminator)
+        graph.devices.filter { it.deviceTypeId == "elimination-manager" }.forEach { device ->
+            val enabled = (mutableStates.getValue(device.id) as EliminationManagerRuntime).enabled
+            if (enabled && (victim != eliminator || device.optionBoolean("validOnSelfElimination"))) {
+                emit(device.id, "onEliminated", victim, depth)
+                if (victim != eliminator) emit(device.id, "onElimination", eliminator, depth)
+            }
+        }
+    }
+
+    private fun eliminateCreature(type: String, actor: String, depth: Int) {
+        record(clockMillis, TraceKind.INPUT, "scenario", "Creature Eliminated: $type", actor)
+        graph.devices.filter { it.deviceTypeId == "creature-manager" }.forEach { device ->
+            val enabled = (mutableStates.getValue(device.id) as CreatureManagerRuntime).enabled
+            if (enabled && device.optionEnum("creatureType") == type)
+                emit(device.id, "onMatchingCreatureTypeEliminated", actor, depth)
         }
     }
 
@@ -248,6 +343,39 @@ class PrototypeSimulationSession(
                     else -> error("Unknown Barrier function: $function")
                 }
             }
+            "hud-message" -> {
+                val state = mutableStates.getValue(id) as HudMessageRuntime
+                when (function) {
+                    "show" -> update(id, state.copy(visible = true), actor, "message shown: ${config.optionText("message")}")
+                    "hide" -> update(id, state.copy(visible = false), actor, "message hidden")
+                    else -> error("Unknown HUD Message function: $function")
+                }
+            }
+            "button" -> {
+                val state = mutableStates.getValue(id) as ButtonRuntime
+                when (function) {
+                    "enable" -> update(id, state.copy(enabled = true), actor, "enabled=true")
+                    "disable" -> update(id, state.copy(enabled = false), actor, "enabled=false")
+                    else -> error("Unknown Button function: $function")
+                }
+            }
+            "creature-manager" -> {
+                val state = mutableStates.getValue(id) as CreatureManagerRuntime
+                when (function) {
+                    "enable" -> update(id, state.copy(enabled = true), actor, "enabled=true")
+                    "disable" -> update(id, state.copy(enabled = false), actor, "enabled=false")
+                    else -> error("Unknown Creature Manager function: $function")
+                }
+            }
+            "elimination-manager" -> {
+                val state = mutableStates.getValue(id) as EliminationManagerRuntime
+                when (function) {
+                    "enable" -> update(id, state.copy(enabled = true), actor, "enabled=true")
+                    "disable" -> update(id, state.copy(enabled = false), actor, "enabled=false")
+                    else -> error("Unknown Elimination Manager function: $function")
+                }
+            }
+            "round-settings" -> error("Round Settings subset has no callable functions")
             else -> error("Unsupported device escaped constructor validation")
         }
     }
@@ -257,6 +385,7 @@ private fun CreativeDeviceInstance.optionBoolean(key: String) = (configuredOptio
 private fun CreativeDeviceInstance.optionInt(key: String) = (configuredOptions.getValue(key) as DeviceOptionValue.IntegerValue).value
 private fun CreativeDeviceInstance.optionEnum(key: String) = (configuredOptions.getValue(key) as DeviceOptionValue.EnumValue).value
 private fun CreativeDeviceInstance.optionDuration(key: String) = (configuredOptions.getValue(key) as DeviceOptionValue.DurationValue).milliseconds
+private fun CreativeDeviceInstance.optionText(key: String) = (configuredOptions.getValue(key) as DeviceOptionValue.TextValue).value
 
 data class SimulationLimits(
     val maxActionsPerTick: Int = 256,
@@ -281,3 +410,10 @@ sealed interface DeviceRuntimeState
 data class TriggerRuntime(val enabled: Boolean, val triggerCount: Int = 0, val nextAllowedAtMillis: Long = 0) : DeviceRuntimeState
 data class TrackerRuntime(val assigned: Boolean, val progress: Int = 0, val completed: Boolean = false) : DeviceRuntimeState
 data class BarrierRuntime(val enabled: Boolean) : DeviceRuntimeState
+
+/** Scenario-only states; never stored in the mechanic document or Room. */
+data class HudMessageRuntime(val visible: Boolean) : DeviceRuntimeState
+data class ButtonRuntime(val enabled: Boolean, val interactions: Int = 0) : DeviceRuntimeState
+data class RoundSettingsRuntime(val enabled: Boolean) : DeviceRuntimeState
+data class CreatureManagerRuntime(val enabled: Boolean) : DeviceRuntimeState
+data class EliminationManagerRuntime(val enabled: Boolean) : DeviceRuntimeState

@@ -11,6 +11,6 @@ data class MechanicGraph(
 )
 data class SavedMechanic(
     val mechanicMetadata: MechanicMetadataV1,
-    val appVersion: String = "0.0.4", val catalogVersion: String = "0.1.0-draft",
+    val appVersion: String = "0.0.4", val catalogVersion: String = "0.2.0-draft",
     val graph: MechanicGraph = MechanicGraph(), val notes: String = "",
 )

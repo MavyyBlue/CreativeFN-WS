@@ -1,71 +1,13 @@
-# Simulation — Phase 3 foundation candidate
+# Simulation — Phase 3.2 candidate
 
-## What exists in this source bundle
+Phase 3.1 **passed Android CI** [38316188825](https://github.com/MavyyBlue/CreativeFN-WS/actions/runs/38316188825) at `4ce239cdf3483d0867fb1600812f9587128f3132`: JVM tests, Android build/lint, APK signature, and 10 emulator tests passed. The owner reported a fresh install and that the prior user-facing UI launched; this does **not** validate the Phase 3.2 simulator UI.
 
-`simulation-engine` now contains `PrototypeSimulationSession`, an Android-free,
-explicitly **experimental rules sandbox**. It consumes the existing typed
-`MechanicGraph`, validates devices and Event → Function bindings against the
-versioned catalog, and holds runtime state apart from saved configuration. No
-Room schema change, app UI route, Android permission, or Fortnite integration is
-introduced. `SimulationAvailability.isImplemented` intentionally remains false:
-no builder-facing verified simulator is delivered by this first slice.
+## What Phase 3.2 adds (candidate, not yet CI or phone accepted)
 
-Implemented deterministic controls: `trigger(deviceId, actorId, afterMillis)`,
-`pause()`, `step()` (one queued action even when paused), `resume()` (drain until
-idle/safety stop), `advanceTo(millis)` (idle only), `reset()`. The virtual clock
-starts at zero; only scheduled actions or explicit idle advance change it.
-At equal timestamps a monotonically increasing insertion sequence breaks ties.
-Trace entries record time, index, device, input/event/function/state change or
-ignored action, details, and actor ID. No real clock or Android APIs are read.
+The Android-free `PrototypeSimulationSession` accepts manual `startGame`, `interactButton`, `playerEliminated`, `creatureEliminated` scenarios in addition to existing Trigger input. Game Start emits Round 1 On Round Start from enabled Round Settings, with HUD Message auto-display only when explicitly enabled. Button emits On Interact; player elimination emits the two separately documented Elimination Manager events; matching-Fiend elimination emits the Creature Manager event. This is deterministic local event routing, not Fortnite integration or a complete world simulation. Only the enumerated prototype options are represented. `FORTNITE_FIDELITY.md` is the source of truth for evidence and unsupported behaviors.
 
-Runtime types: Trigger enabled/count/cooldown; Tracker assigned/progress/completed;
-Barrier enabled. State lives in the session and is not saved back to the graph.
-On a successful Trigger firing, `onTriggered` dispatches bound functions. Tracker
-increment/complete fires `onComplete` **once per completion**; Barrier enable/
-disable mutates its separate runtime state. Other catalog port names are accepted
-only where corresponding prototype behavior is implemented. An actor ID is
-carried through traces and bindings but **no per-player/team tracking** is
-modeled; the rules intentionally reject unsupported configurations.
+The graph editor has a **Simulate / Design** toggle. Simulate takes a frozen configuration snapshot; node edits and bindings are blocked while in the test scene, but pan/zoom remains available. The fixed Actions toggle reveals Game Start, Player Eliminated, Creature Eliminated, per-Trigger activation and per-Button interaction. Queue inputs then **Run** or **Step**; **Pause**, **Reset** and a collapsible **Output** scene panel report states, trace and loop warnings. Everything remains within the current Android app; no external overlays, Fortnite permissions, services or background simulation. Simulation effects never persist to Room.
 
-Prototype supported configuration subset:
-- Trigger: enabledOnGameStart, triggeredByPlayer (manual input gate),
-  timesCanTrigger (0 means unlimited), resetDelay (virtual milliseconds);
-  functions enable/disable/resetTimesTriggered/trigger.
-- Tracker: `sharing=All`, `showOnHud=Off`, `targetValue>=1`, assignOnGameStart;
-  functions assign/incrementProgress/resetProgress/complete/remove.
-- Barrier: `enabledDuringPhase=Always` or `None`; functions enable/disable.
+Deterministic queue: `(virtualMilliseconds, insertionSequence)` ordering; explicit runtime states, actor-scoped trace, resettable clock/queue/traces, max per-tick/depth/session/pending limits with `POSSIBLE_EVENT_LOOP`. Unsupported graph configurations are rejected with an actionable explanation; no guessed fallback. The UI is explicitly marked **TEST SCENE · Not Fortnite-verified**. Only the Android UI moves out of the placeholder; verified Fortnite gameplay simulation is still unavailable.
 
-This is **not** a claim that these are Epic's current gameplay semantics,
-per-player instigation, true phase transitions, collision, physics, display,
-or timing. The catalog stays NOT_SIMULATED / REFERENCE ONLY pending fidelity
-verification. Unsupported types/options fail before execution instead of being
-silently treated as simulated. Adding full semantics requires verified references,
-new tests and explicit catalog/UX review.
-
-## Safety and determinism
-
-Cycles are allowed, but each action is bounded by defaults of 256 processed
-operations per virtual millisecond, 64 propagation levels, 10,000 session actions,
-and 4,096 pending actions. Caps are configurable for tests. On exceed, the
-session enters `POSSIBLE_EVENT_LOOP`, preserves the existing trace/queue, and
-records involved device IDs. The owner must Reset to run again. Processed order
-and snapshots are repeatable with the same graph, UUIDs and scheduled inputs.
-
-## Acceptance fixtures
-
-`simulation-engine/src/test/resources/fixtures/three-key-vault-core.trace` is a
-literal expected trace for **three one-use Triggers → Tracker target 3 → Barrier
-disabled**. Tests verify progress 1/2/3, barrier enabled until completion,
-one `onComplete`, non-retriggerable used Triggers, strict trace equality,
-ordering, pause/step/resume/reset, actor propagation, delayed input, cooldown,
-loop guards, validation failures and disabled/unassigned behavior.
-
-The complete Three-Key Vault specification additionally requires **HUD Message**
-on success. That type and its function/event semantics do not yet exist in the
-catalog; the full golden scenario is **NOT complete**. A subsequent bounded
-catalog+runtime slice must add HUD Message with a carefully labeled prototype
-behavior and extend the fixture. UI controls and real-phone acceptance likewise
-remain pending. Golden tests do not establish Fortnite fidelity.
-
-Remote Android/JVM CI for this candidate has **not** run at time of packaging.
-Inspect the exact imported SHA and Android jobs before marking it accepted.
+Acceptance: old 3-device golden core remains; new literal `fixtures/three-key-vault-phase32.trace` covers three one-use Triggers → Tracker 3 → Barrier disable **and HUD Show exactly once**, with a blocked retrigger. New JVM tests cover Game Start, Round Settings, Button one-use, player vs creature elimination, actor traces, and deterministic repetition. All 16 engine tests passed in a standalone Kotlin/JVM harness; **full Gradle and emulator CI for Phase 3.2 has not yet executed**. CI is the acceptance gate. After CI, validate on the owner's actual phone and verify device behavior in Fortnite before any 1:1 claim.

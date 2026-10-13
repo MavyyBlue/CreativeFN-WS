@@ -59,3 +59,6 @@ Use the [mobile delivery guide](docs/MOBILE_DELIVERY.md): install the two workfl
 files once, upload the source ZIP at repository root, then extract the APK from the
 successful Android run’s GitHub Actions artifact. A workspace path or temporary
 external APK URL is not the supported mobile distribution flow.
+
+
+**Phase 3.2 prototype candidate:** The graph editor now has a local **Simulate** test scene with manual external actions, collapsible output and five more Epic-documented reference devices. These are **not yet Fortnite-fidelity-certified**, and running the simulator never reads or controls the Fortnite app. See `FORTNITE_FIDELITY.md` for supported/unsupported behavior. Existing save data uses a backwards-compatible catalog migration; the device remains offline.

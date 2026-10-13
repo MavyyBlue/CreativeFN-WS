@@ -119,3 +119,12 @@ Repaired Android execution remains pending a new CI run.
 - No Android UI, database migration, APK install, version bump, permission or
   signing changes. Devices remain REFERENCE ONLY; no Fortnite fidelity claim.
 - Local compiler/harness checks passed; new Android CI and phone acceptance pending.
+
+## Phase 3.2 source candidate — 2026-10-12 (pending Android CI and phone test)
+
+- Five new Epic-documented reference entries with narrow prototype option subsets: HUD Message, Button, Round Settings, Creature Manager, Elimination Manager.
+- External scenario action queue: Game Start (first Round), Player Eliminated, Fiend Eliminated, Button Interact, plus existing Trigger actions. Game-engine rules NOT claimed 1:1; see fidelity ledger.
+- First in-app Simulate/Design toggle, floating collapsible actions, Run/Pause/Step/Reset and collapsible trace/state console. Simulation runs on a configuration snapshot; no Room or Fortnite integration.
+- Expanded literal golden fixture includes HUD Show; new runtime and port/old-document migration regression tests.
+- Catalog upgraded additively to 0.2.0-draft with backwards decoder for 0.1.0-draft saved graphs. No Android permissions, signing or Room schema changes.
+- Existing Phase 3.1 runtime tests and new scenario tests: 16/16 passed standalone Kotlin harness. Remote CI pending.

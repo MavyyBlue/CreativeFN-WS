@@ -42,6 +42,7 @@ internal fun LogicCanvas(
     graph: MechanicGraph, pendingSource: String?, onConfigure: (String) -> Unit, onContext: (String) -> Unit,
     onEvent: (String, DeviceEventId) -> Unit, onFunction: (String, DeviceFunctionId) -> Unit,
     onMove: (String, Float, Float) -> Unit, onViewport: (GraphViewport) -> Unit,
+    readOnly: Boolean = false,
 ) {
     var viewport by remember { mutableStateOf(graph.viewport) }
     LaunchedEffect(graph.viewport) { viewport = graph.viewport }
@@ -58,7 +59,7 @@ internal fun LogicCanvas(
     Canvas(Modifier.fillMaxSize().testTag("logic-canvas").semantics {
         contentDescription = "Creative device graph"
         stateDescription = "${graph.devices.size} devices, ${graph.connections.size} bindings"
-        customActions = graph.devices.map { d -> CustomAccessibilityAction("Configure ${d.name}") { onConfigure(d.id); true } }
+        customActions = if (readOnly) emptyList() else graph.devices.map { d -> CustomAccessibilityAction("Configure ${d.name}") { onConfigure(d.id); true } }
     }.pointerInput(Unit) {
         awaitEachGesture {
             val down = awaitFirstDown(requireUnconsumed = false)
@@ -74,7 +75,7 @@ internal fun LogicCanvas(
             var pressed = true
             var elapsed = 0L
             while (pressed) {
-                val event = if (!dragged && !transformed && !longPressed && selected != null)
+                val event = if (!readOnly && !dragged && !transformed && !longPressed && selected != null)
                     withTimeoutOrNull((viewConfiguration.longPressTimeoutMillis - elapsed).coerceAtLeast(1)) { awaitPointerEvent() }
                 else awaitPointerEvent()
                 if (event == null) { context(selected!!.device.id); longPressed = true; continue }
@@ -94,7 +95,7 @@ internal fun LogicCanvas(
                     displacement += position - last; last = position
                     if (displacement.getDistance() > viewConfiguration.touchSlop) dragged = true
                     if (dragged) {
-                        if (!transformed && selected != null && selected.event == null && selected.function == null) {
+                        if (!readOnly && !transformed && selected != null && selected.event == null && selected.function == null) {
                             moving = selected.device.copy(graphX = selected.device.graphX + displacement.x / density / viewport.zoom,
                                 graphY = selected.device.graphY + displacement.y / density / viewport.zoom)
                         } else if (!transformed) {
@@ -109,7 +110,7 @@ internal fun LogicCanvas(
             }
             moving?.let { moveAction(it.id, it.graphX, it.graphY) }; moving = null
             if (viewport != startView) viewportAction(viewport)
-            if (!dragged && !transformed && !longPressed) selected?.let {
+            if (!readOnly && !dragged && !transformed && !longPressed) selected?.let {
                 when {
                     it.event != null -> eventAction(it.device.id, it.event)
                     it.function != null -> functionAction(it.device.id, it.function)

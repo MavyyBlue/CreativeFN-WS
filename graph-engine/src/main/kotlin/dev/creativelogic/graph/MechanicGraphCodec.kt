@@ -40,9 +40,12 @@ class MechanicGraphCodec(private val catalog: DeviceCatalog) {
         }
         require(version == 2) { "Unsupported mechanic format: $version" }
         val dto = json.decodeFromString<MechanicDocumentDtoV2>(source)
-        require(dto.catalogVersion == catalog.catalogVersion) { "Catalog migration required" }
+        require(dto.catalogVersion == catalog.catalogVersion || dto.catalogVersion == "0.1.0-draft") {
+            "Catalog migration required"
+        }
+        require(dto.devices.all { it.catalogVersion == dto.catalogVersion }) { "Mismatched device catalog versions" }
         val graph = MechanicGraph(dto.devices.map(instances::fromDto), dto.bindings.map { LogicConnection(it.id, it.sourceDeviceId, DeviceEventId(it.sourceEventId), it.targetDeviceId, DeviceFunctionId(it.targetFunctionId)) },
             GraphViewport(dto.viewport.panX, dto.viewport.panY, dto.viewport.zoom))
-        return SavedMechanic(dto.mechanicMetadata, dto.appVersion, dto.catalogVersion, graph, dto.notes).also(::validate)
+        return SavedMechanic(dto.mechanicMetadata, dto.appVersion, catalog.catalogVersion, graph, dto.notes).also(::validate)
     }
 }

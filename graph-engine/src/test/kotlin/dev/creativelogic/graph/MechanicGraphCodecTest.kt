@@ -22,6 +22,13 @@ class MechanicGraphCodecTest {
         val original = graph()
         assertEquals(original, codec.decode(codec.encode(original)))
     }
+    @Test fun phase2CatalogGraphMigratesAdditivelyToExpandedCatalog() {
+        val legacyJson = codec.encode(graph()).replace("0.2.0-draft", "0.1.0-draft")
+        val upgraded = codec.decode(legacyJson)
+        assertEquals("0.2.0-draft", upgraded.catalogVersion)
+        assertEquals(3, upgraded.graph.devices.size)
+        assertEquals(upgraded, codec.decode(codec.encode(upgraded)))
+    }
     @Test fun emptyVersionOneDraftMigratesWithoutLosingMetadataAndNotes() {
         val old = MechanicDocumentV1(mechanicMetadata = metadata, notes = "Old notes")
         val migrated = codec.decode(MechanicDocumentCodec.encode(old))
