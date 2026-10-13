@@ -18,6 +18,7 @@ import androidx.core.content.edit
 import androidx.core.graphics.toColorInt
 import androidx.core.graphics.withTranslation
 import androidx.core.graphics.withScale
+import androidx.core.graphics.withClip
 import android.graphics.drawable.GradientDrawable
 import android.os.Build
 import android.os.IBinder
@@ -1124,25 +1125,26 @@ internal class BlueprintGraphView(context: Context) : View(context) {
         paint.strokeWidth = 1f
         canvas.drawLine(left + 10f, top + InlineNodeCards.HEADER_HEIGHT, left + w - 10f,
             top + InlineNodeCards.HEADER_HEIGHT, paint)
-        canvas.save()
-        canvas.clipRect(left + 8f, top + InlineNodeCards.HEADER_HEIGHT + 3f,
-            left + w - 8f, top + InlineNodeCards.HEADER_HEIGHT + visibleHeight)
-        paint.style = Paint.Style.FILL
-        lines.forEachIndexed { index, line ->
-            val y = top + InlineNodeCards.HEADER_HEIGHT + InlineNodeCards.INNER_PADDING +
-                (index + 1) * InlineNodeCards.LINE_HEIGHT - 4f - detailScroll
-            if (y >= top + InlineNodeCards.HEADER_HEIGHT && y <= top + InlineNodeCards.HEADER_HEIGHT + visibleHeight + 12f) {
-                paint.textSize = if (line.style == InlineNodeCards.Style.SECTION) 12.4f else 12.5f
-                paint.color = when (line.style) {
-                    InlineNodeCards.Style.SECTION -> Color.rgb(137, 218, 252)
-                    InlineNodeCards.Style.NOTE -> Color.rgb(194, 204, 220)
-                    InlineNodeCards.Style.CONNECTION -> Color.rgb(225, 233, 255)
-                    InlineNodeCards.Style.OPTION -> Color.WHITE
+        // AndroidX restores the Canvas clip in a finally block; keep the hint/scrollbar outside it.
+        // No per-frame Rect/RectF allocation and no change to the original clipping bounds.
+        canvas.withClip(left + 8f, top + InlineNodeCards.HEADER_HEIGHT + 3f,
+            left + w - 8f, top + InlineNodeCards.HEADER_HEIGHT + visibleHeight) {
+            paint.style = Paint.Style.FILL
+            lines.forEachIndexed { index, line ->
+                val y = top + InlineNodeCards.HEADER_HEIGHT + InlineNodeCards.INNER_PADDING +
+                    (index + 1) * InlineNodeCards.LINE_HEIGHT - 4f - detailScroll
+                if (y >= top + InlineNodeCards.HEADER_HEIGHT && y <= top + InlineNodeCards.HEADER_HEIGHT + visibleHeight + 12f) {
+                    paint.textSize = if (line.style == InlineNodeCards.Style.SECTION) 12.4f else 12.5f
+                    paint.color = when (line.style) {
+                        InlineNodeCards.Style.SECTION -> Color.rgb(137, 218, 252)
+                        InlineNodeCards.Style.NOTE -> Color.rgb(194, 204, 220)
+                        InlineNodeCards.Style.CONNECTION -> Color.rgb(225, 233, 255)
+                        InlineNodeCards.Style.OPTION -> Color.WHITE
+                    }
+                    drawText(line.text, left + InlineNodeCards.INNER_PADDING, y, paint)
                 }
-                canvas.drawText(line.text, left + InlineNodeCards.INNER_PADDING, y, paint)
             }
         }
-        canvas.restore()
         paint.textSize = 10f
         paint.color = Color.rgb(184, 205, 235)
         val hint = if (contentHeight > visibleHeight) "↕ Scroll settings · Tap node to close" else "Tap node to close"

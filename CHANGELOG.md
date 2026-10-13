@@ -50,3 +50,7 @@
 - Merge latest folder metadata on editor saves so returning from Fortnite and changing the graph does not accidentally erase groups. Remove references to devices subsequently deleted in editor.
 - Long-press a graph node to focus only that node and its immediate incoming/outgoing neighbors; unrelated cards and wires dim but remain interactable. Double-tap empty graph space to clear focus. Pinch/pan, Fit and overlay size controls remain.
 - Added pure-JVM adjacency and folder/codec tests. Android Gradle, lint, emulator and on-phone Fortnite UX are **not yet certified** for this candidate.
+
+## Inline node clip Lint correction — 2026-10-13 (CI pending)
+- Android run [38473346190](https://github.com/MavyyBlue/CreativeFN-WS/actions/runs/38473346190) failed at strict Lint with one `UseKtx` finding in `BlueprintOverlayService.kt` (manual `Canvas.save/clipRect/restore` in expanded-node details rendering). Kotlin compilation completed; emulator launch-smoke was skipped.
+- Replaced the manual clipping calls with `androidx.core.graphics.withClip(left, top, right, bottom)`, preserving floating-point clipping bounds, clipped text, hint/scrollbar outside clip, and existing node gestures. No behavior or signing/database changes intended. This correction is **not** Android CI certified until the next run.
