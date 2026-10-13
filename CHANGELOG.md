@@ -1,3 +1,9 @@
+## Cover Flow accessibility Lint fix — 2026-10-13 (CI pending)
+
+- GitHub Android run `38466392646` at commit `890c6ff4` compiled the overlay but **failed** strict `:app:lintDebug` with one `ClickableViewAccessibility` error at `BlueprintOverlayService.kt:427`. Emulator `launch-smoke` was skipped; this run was not green.
+- Replace the navigation labels' plain `TextView` with an explicit `AccessibleOverlayLabel` subclass overriding `performClick()`. The existing swipe handler already calls `performClick()` on short taps, so TalkBack and pointer activation share the same click path. No lint rule is disabled.
+- No changes to Room, mechanic data, simulated device behavior, permissions, signing, or the Cover Flow geometry. Requires a new Android CI build and phone validation.
+
 ## Cover Flow navigation and full-bleed blueprint — 2026-10-13 (source candidate)
 
 - Based on live `main` commit `363dde7c` (Android CI run `38458909239` green); owner screenshot establishes Graph and node inspector above Fortnite. This navigation revision is NOT yet CI/phone-certified.

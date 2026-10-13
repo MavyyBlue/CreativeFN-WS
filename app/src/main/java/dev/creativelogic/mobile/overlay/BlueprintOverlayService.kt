@@ -297,7 +297,7 @@ class BlueprintOverlayService : Service() {
             }
         })
     }
-    private fun label(text: String, size: Float = 14f, bold: Boolean = false): TextView = TextView(this).apply {
+    private fun label(text: String, size: Float = 14f, bold: Boolean = false): AccessibleOverlayLabel = AccessibleOverlayLabel(this).apply {
         this.text = text; textSize = size; setTextColor(Color.WHITE); setPadding(dp(9), dp(7), dp(9), dp(7))
         if (bold) setTypeface(null, android.graphics.Typeface.BOLD)
     }
@@ -846,6 +846,16 @@ class BlueprintOverlayService : Service() {
         work.cancel()
         super.onDestroy()
     }
+}
+
+
+/**
+ * TextView used by gesture-driven Cover Flow tiles. A custom touch listener must
+ * delegate non-swipe taps to performClick() for accessibility services and Lint.
+ * Keeping this override on the actual View class preserves touch and TalkBack clicks.
+ */
+private class AccessibleOverlayLabel(context: Context) : TextView(context) {
+    override fun performClick(): Boolean = super.performClick()
 }
 
 internal class BlueprintGraphView(context: Context) : View(context) {
