@@ -35,3 +35,9 @@ substrings are drawn without allocating temporary strings. Strict lint remains
 enabled and signing, manifest permissions, Room schema, simulation rules and
 catalog definitions are unchanged. This is a **new, unverified CI candidate**;
 Android build/lint/emulator and physical Fortnite overlay acceptance remain open.
+
+## Post-install owner test: Fortnite overlay confirmed; usability defects found (2026-10-13)
+
+Follow-up source import commit `6efa6717592b4e0bf63a87bcc2f958b005baa3a8` has successful Android CI [38435563960](https://github.com/MavyyBlue/CreativeFN-WS/actions/runs/38435563960). Owner installed the APK and provided screenshots of the expanded real Android overlay above Fortnite in landscape: FN bubble was present; Steps, Devices and Links tabs worked. Owner reported an empty Graph tab and an oversized panel obstructing gameplay. This **does not** certify the full blueprint experience yet.
+
+The next source-only candidate provides a compact quarter-screen landscape default, adjustable width and height, orientation-specific saved positions/sizes, a Tabs hide/show control, and a refitted graph with a visible device count and Fit graph button. Android render and pure Kotlin sizing regression tests are included. No backend or schema changes. CI, emulator graphic test and a repeat Fortnite phone check of this new candidate are pending; previous green evidence applies only to `6efa671`.

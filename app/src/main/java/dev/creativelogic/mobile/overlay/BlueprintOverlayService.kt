@@ -27,10 +27,10 @@ import android.view.MotionEvent
 import android.view.ScaleGestureDetector
 import android.view.View
 import android.view.WindowManager
-import android.widget.Button
 import android.widget.CheckBox
 import android.widget.FrameLayout
 import android.widget.LinearLayout
+import android.widget.SeekBar
 import android.widget.ScrollView
 import android.widget.TextView
 import dev.creativelogic.catalog.InitialDeviceCatalog
@@ -42,6 +42,7 @@ import dev.creativelogic.mobile.blueprint.BlueprintProgress
 import dev.creativelogic.model.SavedMechanic
 import kotlin.math.abs
 import kotlin.math.min
+import android.text.TextUtils
 
 /** Explicitly user-launched reference window. Does not access Fortnite, draw continuously or run simulation. */
 class BlueprintOverlayService : Service() {
@@ -70,6 +71,11 @@ class BlueprintOverlayService : Service() {
     private var expanded = false
     private var tab = 0
     private var step = 0
+    private var tabsVisible = true
+    private var resizeVisible = false
+    private var warningsVisible = false
+    private var panelWidthPercent = 52
+    private var panelHeightPercent = 52
 
     override fun onBind(intent: Intent?): IBinder? = null
 
@@ -92,6 +98,7 @@ class BlueprintOverlayService : Service() {
         if (saved == null) { stopSelf(); return START_NOT_STICKY }
         blueprint = BlueprintGenerator.create(saved, InitialDeviceCatalog.catalog)
         step = prefs.getInt("step:${saved.mechanicMetadata.id}", 0).coerceIn(0, (blueprint!!.steps.size - 1).coerceAtLeast(0))
+        tabsVisible = prefs.getBoolean("tabsVisible", true)
         if (root == null) showWindow(false) else render()
         return START_NOT_STICKY
     }
@@ -116,36 +123,76 @@ class BlueprintOverlayService : Service() {
     private fun bounds(): Pair<Int, Int> = if (Build.VERSION.SDK_INT >= 30) {
         manager.currentWindowMetrics.bounds.let { it.width() to it.height() }
     } else resources.displayMetrics.run { widthPixels to heightPixels }
-    private fun sizes(panel: Boolean): Pair<Int, Int> {
+
+    private fun orientationKey(): String {
         val (width, height) = bounds()
-        return if (!panel) dp(58) to dp(58) else
-            min(width - dp(12), dp(660)) to min(height - dp(48), dp(570))
+        return if (OverlayPanelSizing.isLandscape(width, height)) "landscape" else "portrait"
+    }
+    private fun positionKey(panel: Boolean) = "${if (panel) "panel" else "bubble"}-${orientationKey()}"
+
+    private fun loadSizePreferences() {
+        val (width, height) = bounds()
+        val suffix = orientationKey()
+        panelWidthPercent = prefs.getInt("widthPct:$suffix", OverlayPanelSizing.defaultWidthPercent(width, height))
+            .coerceIn(40, 95)
+        panelHeightPercent = prefs.getInt("heightPct:$suffix", OverlayPanelSizing.defaultHeightPercent(width, height))
+            .coerceIn(32, 92)
+    }
+    private fun sizes(panel: Boolean): Pair<Int, Int> {
+        if (!panel) return dp(58) to dp(58)
+        val (width, height) = bounds()
+        val size = OverlayPanelSizing.calculate(width, height, resources.displayMetrics.density,
+            panelWidthPercent, panelHeightPercent)
+        return size.width to size.height
     }
     private fun clamp(params: WindowManager.LayoutParams) {
         val (w, h) = bounds()
-        params.x = params.x.coerceIn(0, (w - params.width).coerceAtLeast(0))
-        params.y = params.y.coerceIn(0, (h - params.height).coerceAtLeast(0))
+        val (x, y) = OverlayPanelSizing.clampPosition(params.x, params.y, params.width, params.height, w, h)
+        params.x = x
+        params.y = y
     }
     private fun showWindow(panel: Boolean) {
         if (!Settings.canDrawOverlays(this)) { stopSelf(); return }
         expanded = panel
+        if (panel) loadSizePreferences() else resizeVisible = false
         val (width, height) = sizes(panel)
-        val prefix = if (panel) "panel" else "bubble"
+        val prefix = positionKey(panel)
         val configuration = WindowManager.LayoutParams(width, height,
             WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
             WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL,
             PixelFormat.TRANSLUCENT).apply {
             gravity = Gravity.TOP or Gravity.START
-            x = prefs.getInt("${prefix}X", if (panel) dp(16) else dp(20))
-            y = prefs.getInt("${prefix}Y", if (panel) dp(42) else dp(120))
+            x = prefs.getInt("${prefix}X", if (panel) dp(12) else dp(20))
+            y = prefs.getInt("${prefix}Y", if (panel) dp(20) else dp(80))
             clamp(this)
         }
         try {
             val window = root ?: FrameLayout(this).also { root = it; manager.addView(it, configuration) }
             params = configuration
-            if (root === window && window.isAttachedToWindow) manager.updateViewLayout(window, configuration)
+            if (window.isAttachedToWindow) manager.updateViewLayout(window, configuration)
             render()
         } catch (_: Exception) { stopSelf() }
+    }
+
+    /** On-demand only, from a touch gesture; persists its setting at gesture completion. */
+    private fun resizePanel(widthPercent: Int, heightPercent: Int, save: Boolean) {
+        if (!expanded) return
+        panelWidthPercent = widthPercent.coerceIn(40, 95)
+        panelHeightPercent = heightPercent.coerceIn(32, 92)
+        val (w, h) = sizes(true)
+        val p = params ?: return
+        p.width = w
+        p.height = h
+        clamp(p)
+        try { root?.let { manager.updateViewLayout(it, p) } }
+        catch (_: Exception) { stopSelf(); return }
+        if (save) prefs.edit {
+            val orientation = orientationKey()
+            putInt("widthPct:$orientation", panelWidthPercent)
+            putInt("heightPct:$orientation", panelHeightPercent)
+            putInt("${positionKey(true)}X", p.x)
+            putInt("${positionKey(true)}Y", p.y)
+        }
     }
 
     private fun moveTo(x: Int, y: Int, save: Boolean) {
@@ -153,7 +200,7 @@ class BlueprintOverlayService : Service() {
         p.x = x; p.y = y; clamp(p)
         try { root?.let { manager.updateViewLayout(it, p) } } catch (_: Exception) { stopSelf(); return }
         if (save) {
-            val prefix = if (expanded) "panel" else "bubble"
+            val prefix = positionKey(expanded)
             prefs.edit {
                 putInt("${prefix}X", p.x)
                 putInt("${prefix}Y", p.y)
@@ -190,11 +237,45 @@ class BlueprintOverlayService : Service() {
         this.text = text; textSize = size; setTextColor(Color.WHITE); setPadding(dp(9), dp(7), dp(9), dp(7))
         if (bold) setTypeface(null, android.graphics.Typeface.BOLD)
     }
-    private fun button(text: String, action: () -> Unit) = Button(this).apply {
-        this.text = text; textSize = 12f; isAllCaps = false
+    private fun button(text: String, action: () -> Unit): TextView = label(text, 12f).apply {
+        gravity = Gravity.CENTER
+        background = background("#303D57", 10)
+        isClickable = true
+        isFocusable = true
+        minHeight = dp(32)
+        setPadding(dp(8), dp(4), dp(8), dp(4))
         setOnClickListener { action() }
     }
-    private fun heading(text: String) = label(text, 16f, true)
+    private fun heading(text: String) = label(text, 15f, true)
+
+    private fun percentText(labelText: String, amount: Int): String = "$labelText $amount%"
+
+    private fun slider(labelText: String, isWidthControl: Boolean): LinearLayout {
+        val row = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
+        val current = if (isWidthControl) panelWidthPercent else panelHeightPercent
+        val description = label(percentText(labelText, current), 12f).apply { minWidth = dp(84) }
+        row.addView(description)
+        val seek = SeekBar(this).apply {
+            min = if (isWidthControl) 40 else 32
+            max = if (isWidthControl) 95 else 92
+            progress = current
+            contentDescription = "$labelText of blueprint overlay"
+            setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+                override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
+                    if (!fromUser) return
+                    description.text = percentText(labelText, progress)
+                    resizePanel(if (isWidthControl) progress else panelWidthPercent,
+                        if (isWidthControl) panelHeightPercent else progress, save = false)
+                }
+                override fun onStartTrackingTouch(seekBar: SeekBar?) = Unit
+                override fun onStopTrackingTouch(seekBar: SeekBar?) {
+                    resizePanel(panelWidthPercent, panelHeightPercent, save = true)
+                }
+            })
+        }
+        row.addView(seek, LinearLayout.LayoutParams(0, dp(36), 1f))
+        return row
+    }
 
     private fun render() {
         val window = root ?: return
@@ -213,20 +294,51 @@ class BlueprintOverlayService : Service() {
         val column = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; background = background("#181C2A") }
         window.addView(column, FrameLayout.LayoutParams(-1, -1))
         val toolbar = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
-        val handle = label("⋮⋮  ${guide.name.take(25)}", 14f, true).apply { contentDescription = "Drag blueprint window" }
-        toolbar.addView(handle, LinearLayout.LayoutParams(0, dp(52), 1f))
-        toolbar.addView(button("−") { showWindow(false) })
+        val handle = label("⋮⋮ ${guide.name}", 13f, true).apply {
+            contentDescription = "Drag blueprint window"
+            maxLines = 1
+            ellipsize = TextUtils.TruncateAt.END
+        }
+        toolbar.addView(handle, LinearLayout.LayoutParams(0, dp(38), 1f))
+        toolbar.addView(button(if (tabsVisible) "Tabs −" else "Tabs +") {
+            tabsVisible = !tabsVisible
+            prefs.edit { putBoolean("tabsVisible", tabsVisible) }
+            render()
+        })
+        toolbar.addView(button(if (resizeVisible) "Done" else "Size") {
+            resizeVisible = !resizeVisible
+            render()
+        })
+        toolbar.addView(button("−") { showWindow(false) }.apply { contentDescription = "Collapse blueprint to FN bubble" })
         toolbar.addView(button("Stop") { stopSelf() })
         column.addView(toolbar)
         drag(handle) { }
-        val nav = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
-        listOf("Steps", "Devices", "Links", "Graph").forEachIndexed { index, name ->
-            nav.addView(button(if (tab == index) "• $name" else name) { tab = index; render() },
-                LinearLayout.LayoutParams(0, dp(45), 1f))
+
+        if (resizeVisible) {
+            column.addView(slider("Width", isWidthControl = true))
+            column.addView(slider("Height", isWidthControl = false))
+            column.addView(button("Reset to compact size") {
+                val (w, h) = bounds()
+                resizePanel(OverlayPanelSizing.defaultWidthPercent(w, h),
+                    OverlayPanelSizing.defaultHeightPercent(w, h), save = true)
+                resizeVisible = false
+                render()
+            })
         }
-        column.addView(nav)
+        if (tabsVisible) {
+            val nav = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
+            listOf("Steps", "Devices", "Links", "Graph").forEachIndexed { index, name ->
+                val tabButton = button(if (tab == index) "• $name" else name) { tab = index; render() }
+                tabButton.contentDescription = "Show $name blueprint tab"
+                nav.addView(tabButton, LinearLayout.LayoutParams(0, dp(34), 1f))
+            }
+            column.addView(nav)
+        }
         val scroller = ScrollView(this).apply { isFillViewport = true }
-        val content = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(dp(5), dp(2), dp(5), dp(10)) }
+        val content = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(6), dp(2), dp(6), dp(8))
+        }
         scroller.addView(content)
         column.addView(scroller, LinearLayout.LayoutParams(-1, 0, 1f))
         when (tab) {
@@ -238,11 +350,12 @@ class BlueprintOverlayService : Service() {
     }
 
     private fun showSteps(layout: LinearLayout, guide: Blueprint) {
-        layout.addView(heading("Build checklist • ${step + 1}/${guide.steps.size}"))
+        if (guide.steps.isEmpty()) { layout.addView(label("No construction steps. Review your saved mechanic.")); return }
+        layout.addView(heading("Build checklist · ${step + 1}/${guide.steps.size}"))
         val progress = BlueprintProgress(this, guide.mechanicId)
         val checks = progress.checked()
         val check = CheckBox(this).apply {
-            text = guide.steps[step]; setTextColor(Color.WHITE); textSize = 15f
+            text = guide.steps[step]; setTextColor(Color.WHITE); textSize = 14f
             isChecked = step in checks
             setOnCheckedChangeListener { _, active ->
                 val updated = progress.checked().toMutableSet()
@@ -252,14 +365,17 @@ class BlueprintOverlayService : Service() {
         }
         layout.addView(check)
         val row = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
-        row.addView(button("Previous") { step = (step - 1).coerceAtLeast(0); rememberStep(guide); render() })
-        row.addView(button("Next") { step = (step + 1).coerceAtMost(guide.steps.lastIndex); rememberStep(guide); render() })
+        row.addView(button("Previous") { step = (step - 1).coerceAtLeast(0); rememberStep(guide); render() }, LinearLayout.LayoutParams(0, dp(34), 1f))
+        row.addView(button("Next") { step = (step + 1).coerceAtMost(guide.steps.lastIndex); rememberStep(guide); render() }, LinearLayout.LayoutParams(0, dp(34), 1f))
         layout.addView(row)
         layout.addView(heading("Devices required"))
-        guide.quantities.forEach { (name, count) -> layout.addView(label("$count × $name")) }
+        guide.quantities.forEach { (name, count) -> layout.addView(label("$count × $name", 12f)) }
         if (guide.warnings.isNotEmpty()) {
-            layout.addView(heading("Limits and manual checks"))
-            guide.warnings.forEach { layout.addView(label("• $it", 12f)) }
+            layout.addView(button("${if (warningsVisible) "Hide" else "Show"} verification notes (${guide.warnings.size})") {
+                warningsVisible = !warningsVisible
+                render()
+            })
+            if (warningsVisible) guide.warnings.forEach { layout.addView(label("• $it", 12f)) }
         }
     }
     private fun rememberStep(guide: Blueprint) {
@@ -282,10 +398,22 @@ class BlueprintOverlayService : Service() {
         }
     }
     private fun showGraph(layout: LinearLayout, guide: Blueprint) {
-        layout.addView(heading("Device graph • pinch to zoom, drag to pan"))
         val graph = BlueprintGraphView(this).apply { bind(guide) }
-        layout.addView(graph, LinearLayout.LayoutParams(-1, dp(350)))
-        layout.addView(label("Graph is a reference. Follow the Steps and Devices tabs for exact saved settings."))
+        // The graph occupies the entire available tab viewport. A tall offscreen canvas
+        // made the previous small panel appear empty even when it held real nodes.
+        val topControlsDp = 38 + (if (tabsVisible) 34 else 0) + (if (resizeVisible) 104 else 0)
+        val graphHeight = ((params?.height ?: dp(260)) - dp(topControlsDp + 14)).coerceAtLeast(dp(88))
+        val frame = FrameLayout(this)
+        frame.addView(graph, FrameLayout.LayoutParams(-1, -1))
+        frame.addView(button("Fit") { graph.fitToContent() }.apply {
+            contentDescription = "Fit all saved devices and bindings into the blueprint graph"
+        }, FrameLayout.LayoutParams(dp(58), dp(32), Gravity.TOP or Gravity.END).apply {
+            topMargin = dp(4)
+            rightMargin = dp(4)
+        })
+        layout.addView(frame, LinearLayout.LayoutParams(-1, graphHeight))
+        layout.addView(label("${guide.devices.size} devices · ${guide.bindings.size} links · pinch/drag to explore", 12f))
+        if (guide.devices.isEmpty()) layout.addView(label("Add devices to the saved mechanic to see its graph."))
     }
 
     override fun onConfigurationChanged(newConfig: Configuration) {
@@ -300,81 +428,120 @@ class BlueprintOverlayService : Service() {
     }
 }
 
-private class BlueprintGraphView(context: Context) : View(context) {
-    // Programmatically bound before the View enters the hierarchy. The Context-only
-    // constructor also supports Android's tooling, and each guide is an immutable snapshot.
+internal class BlueprintGraphView(context: Context) : View(context) {
     private lateinit var blueprint: Blueprint
     private var nodes: Map<String, dev.creativelogic.graph.BlueprintDevice> = emptyMap()
-    fun bind(value: Blueprint) {
-        blueprint = value
-        nodes = value.devices.associateBy { it.id }
-        invalidate()
-    }
-    private val nodeBounds = RectF()
-    private val density = resources.displayMetrics.density
+    private val nodeBounds = RectF() // never allocate objects during onDraw
     private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
-    private var zoom = 0.8f
-    private var panX = 15f
-    private var panY = 15f
+    private var zoom = 1f
+    private var panX = 0f
+    private var panY = 0f
     private var lastX = 0f
     private var lastY = 0f
     private val scaler = ScaleGestureDetector(context, object : ScaleGestureDetector.SimpleOnScaleGestureListener() {
         override fun onScale(detector: ScaleGestureDetector): Boolean {
-            zoom = (zoom * detector.scaleFactor).coerceIn(0.2f, 2.5f)
-            invalidate(); return true
+            // Zoom toward the gesture focus, not an arbitrary screen corner.
+            val old = zoom
+            zoom = (zoom * detector.scaleFactor).coerceIn(0.02f, 4.5f)
+            val ratio = zoom / old
+            panX = detector.focusX - (detector.focusX - panX) * ratio
+            panY = detector.focusY - (detector.focusY - panY) * ratio
+            invalidate()
+            return true
         }
     })
-    init { setBackgroundColor(Color.rgb(20, 28, 43)); contentDescription = "Blueprint graph, pinch to zoom and drag to pan" }
+
+    fun bind(value: Blueprint) {
+        blueprint = value
+        nodes = value.devices.associateBy { it.id }
+        if (width > 0 && height > 0) fitToContent() else invalidate()
+    }
+
+    init {
+        setBackgroundColor(Color.rgb(20, 28, 43))
+        contentDescription = "Blueprint graph, pinch to zoom and drag to pan"
+    }
+
+    fun fitToContent() {
+        if (!::blueprint.isInitialized || width <= 0 || height <= 0) return
+        if (blueprint.devices.isEmpty()) {
+            zoom = 1f; panX = 0f; panY = 0f; invalidate(); return
+        }
+        val left = blueprint.devices.minOf { it.graphX }
+        val top = blueprint.devices.minOf { it.graphY }
+        val right = blueprint.devices.maxOf { it.graphX } + 176f
+        val bottom = blueprint.devices.maxOf { it.graphY } + 66f
+        val graphWidth = (right - left).coerceAtLeast(1f)
+        val graphHeight = (bottom - top).coerceAtLeast(1f)
+        val margin = resources.displayMetrics.density * 13f
+        // Pixel-space zoom: source graph coordinates are logical scene units, not density-scaled dp.
+        zoom = min(((width - margin * 2f).coerceAtLeast(1f)) / graphWidth,
+            ((height - margin * 2f).coerceAtLeast(1f)) / graphHeight).coerceIn(0.02f, 4.5f)
+        panX = (width - graphWidth * zoom) / 2f - left * zoom
+        panY = (height - graphHeight * zoom) / 2f - top * zoom
+        invalidate()
+    }
+
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
         super.onSizeChanged(w, h, oldw, oldh)
-        if (blueprint.devices.isNotEmpty() && w > 0 && h > 0) {
-            val left = blueprint.devices.minOf { it.graphX }
-            val top = blueprint.devices.minOf { it.graphY }
-            val right = blueprint.devices.maxOf { it.graphX } + 176f
-            val bottom = blueprint.devices.maxOf { it.graphY } + 66f
-            zoom = min(((w / density) - 32f) / (right - left).coerceAtLeast(1f),
-                ((h / density) - 32f) / (bottom - top).coerceAtLeast(1f)).coerceIn(0.2f, 1.5f)
-            panX = 16f * density - left * zoom * density
-            panY = 16f * density - top * zoom * density
-        }
+        fitToContent()
     }
+
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
         if (!::blueprint.isInitialized) return
+        if (blueprint.devices.isEmpty()) {
+            paint.color = Color.WHITE
+            paint.style = Paint.Style.FILL
+            paint.textSize = 15f * resources.displayMetrics.density
+            canvas.drawText("No graph devices", 14f, 30f * resources.displayMetrics.density, paint)
+            return
+        }
         canvas.withTranslation(panX, panY) {
-            withScale(zoom * density, zoom * density) {
+            withScale(zoom, zoom) {
                 paint.style = Paint.Style.STROKE
                 paint.color = Color.rgb(110, 218, 246)
-                paint.strokeWidth = 2f
+                paint.strokeWidth = 2.4f
                 blueprint.bindings.forEach { link ->
                     val a = nodes[link.sourceId]; val b = nodes[link.targetId]
-                    if (a != null && b != null) drawLine(a.graphX + 176f, a.graphY + 32f, b.graphX, b.graphY + 32f, paint)
+                    if (a != null && b != null) drawLine(a.graphX + 176f, a.graphY + 33f,
+                        b.graphX, b.graphY + 33f, paint)
                 }
                 blueprint.devices.forEach { device ->
-                    paint.style = Paint.Style.FILL
-                    paint.color = Color.rgb(53, 61, 94)
                     nodeBounds.set(device.graphX, device.graphY, device.graphX + 176f, device.graphY + 66f)
-                    drawRoundRect(nodeBounds, 12f, 12f, paint)
+                    paint.style = Paint.Style.FILL
+                    paint.color = Color.rgb(53, 70, 107)
+                    drawRoundRect(nodeBounds, 10f, 10f, paint)
+                    paint.style = Paint.Style.STROKE
+                    paint.color = Color.rgb(123, 168, 237)
+                    paint.strokeWidth = 1.7f
+                    drawRoundRect(nodeBounds, 10f, 10f, paint)
+                    paint.style = Paint.Style.FILL
                     paint.color = Color.WHITE
                     paint.textSize = 15f
-                    drawText(device.name, 0, min(device.name.length, 20), device.graphX + 9f, device.graphY + 27f, paint)
+                    drawText(device.name, 0, min(device.name.length, 20),
+                        device.graphX + 9f, device.graphY + 26f, paint)
                     paint.textSize = 12f
-                    paint.color = Color.rgb(190, 210, 234)
-                    drawText(device.type, 0, min(device.type.length, 24), device.graphX + 9f, device.graphY + 48f, paint)
+                    paint.color = Color.rgb(205, 221, 247)
+                    drawText(device.type, 0, min(device.type.length, 24),
+                        device.graphX + 9f, device.graphY + 48f, paint)
                 }
             }
         }
     }
+
     override fun onTouchEvent(event: MotionEvent): Boolean {
         scaler.onTouchEvent(event)
         when (event.actionMasked) {
             MotionEvent.ACTION_DOWN -> {
                 parent?.requestDisallowInterceptTouchEvent(true)
-                lastX = event.x; lastY = event.y; return true
+                lastX = event.x; lastY = event.y
+                return true
             }
             MotionEvent.ACTION_MOVE -> {
                 if (event.pointerCount == 1 && !scaler.isInProgress) {
-                    panX += event.x - lastX; panY += event.y - lastY
+                    panX += event.x - lastX
+                    panY += event.y - lastY
                     invalidate()
                 }
                 lastX = event.x; lastY = event.y
@@ -382,15 +549,22 @@ private class BlueprintGraphView(context: Context) : View(context) {
             }
             MotionEvent.ACTION_UP -> {
                 parent?.requestDisallowInterceptTouchEvent(false)
-                performClick(); return true
+                performClick()
+                return true
             }
             MotionEvent.ACTION_CANCEL -> {
                 parent?.requestDisallowInterceptTouchEvent(false)
                 return true
             }
-            MotionEvent.ACTION_POINTER_UP -> { lastX = event.getX(0); lastY = event.getY(0); return true }
+            MotionEvent.ACTION_POINTER_UP -> {
+                val index = if (event.actionIndex == 0 && event.pointerCount > 1) 1 else 0
+                lastX = event.getX(index)
+                lastY = event.getY(index)
+                return true
+            }
         }
         return true
     }
+
     override fun performClick(): Boolean { super.performClick(); return true }
 }
