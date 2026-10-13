@@ -17,7 +17,7 @@ Implementation status is based on source inspection and local checks. **Only Git
 
 ## Immediate Android acceptance gate
 
-Import this source ZIP, confirm GitHub Actions build and emulator jobs pass, then check signature continuity before install. On phone: save graph → Blueprints → Guide → overlay permission → Fortnite → bubble → Steps/Devices/Links/Graph → collapse/reopen/Stop → return and edit. Record whether Fortnite or OEM suppresses the overlay. No separate signing workflow changes. Do not call an uncertified overlay a confirmed working release.
+Import this source ZIP, confirm GitHub Actions build and emulator jobs pass, then check signature continuity before install. On phone: save graph → Blueprints → Guide → overlay permission → Fortnite → bubble → floating Cover Flow Steps/Links/Graph navigation → collapse/reopen/Stop → return and edit. Record whether Fortnite or OEM suppresses the overlay. No separate signing workflow changes. Do not call an uncertified overlay a confirmed working release.
 
 ## Real-device feedback / next focused acceptance
 
@@ -26,3 +26,7 @@ GitHub Android run `38435563960` (commit `6efa671`) is **green**, and the owner 
 ## Next phone gate: connection explorer and graph focus
 
 Owner screenshots after the compact sizing correction confirm the graph, nodes, wire and width/height sliders above Fortnite. New patch (CI pending): Steps/Links/Graph navigation; Links device explorer + named, non-destructive organizational folders; graph tap-to-inspect and long-press one-hop focus; double-tap blank to clear. Folder storage is additive inside the existing format-2 `.c1logic` document and Room schema 1 stays unchanged. Verify folder name keyboard focus returns Fortnite touch behavior, export/reimport and edit-save folder retention. Do not mark this candidate certified before Android CI and separate phone evidence.
+
+## Full-bleed Cover Flow UI candidate (2026-10-13)
+
+The immediate certified prior baseline is `363dde7c` (Android workflow `38458909239` passed). The owner supplied a real-phone Fortnite screenshot with functioning compact graph, direct bindings and selected-node inspector. This new source candidate keeps Steps / Links / Graph and the separate saved device-folder metadata, but moves navigation outside the dark graph panel to a three-card, 3D angled, swipeable Cover Flow-style carousel in its own bounded Android overlay window. A small contextual `⋯` menu preserves manual Size, Hide/Show navigation, Collapse and Stop. A device inspector appears over the full-bleed graph without reducing node canvas height; graph focus and Fit are retained. Existing Room/simulator/overlay permissions/signing untouched. Android build/lint, emulator gesture tests, and Fortnite phone confirmation are still required for this candidate.

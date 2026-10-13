@@ -82,6 +82,14 @@ class BlueprintOverlayService : Service() {
     private val manager by lazy { getSystemService(WINDOW_SERVICE) as WindowManager }
     private var root: FrameLayout? = null
     private var params: WindowManager.LayoutParams? = null
+    // Separate, tightly bounded TYPE_APPLICATION_OVERLAY: no invisible full-screen touch surface.
+    private var navigatorRoot: FrameLayout? = null
+    private var navigatorParams: WindowManager.LayoutParams? = null
+    private var navigatorRenderedTab = -1
+    private var navigatorUnavailable = false
+    private val navigatorHeightDp = 56
+    private val navigatorGapDp = 4
+    private var menuVisible = false
     private var blueprint: Blueprint? = null
     private var expanded = false
     private var tab = 0
@@ -104,7 +112,7 @@ class BlueprintOverlayService : Service() {
     private var folderSaving = false
     private var folderStatus: String? = null
     private var currentScroller: ScrollView? = null
-    private var lastRenderedTab = 0
+    private var lastRenderedTab = 2
     private var linksScrollY = 0
 
     override fun onBind(intent: Intent?): IBinder? = null
@@ -129,7 +137,7 @@ class BlueprintOverlayService : Service() {
         savedDocument = saved
         blueprint = BlueprintGenerator.create(saved, InitialDeviceCatalog.catalog)
         // Three stable destinations: Steps, Links directory, interactive Graph.
-        tab = tab.coerceIn(0, 2)
+        tab = prefs.getInt("tab:${saved.mechanicMetadata.id}", 2).coerceIn(0, 2)
         linkSelectedId = null
         selectedGraphId = null
         focusedGraphId = null
@@ -169,30 +177,46 @@ class BlueprintOverlayService : Service() {
     }
     private fun positionKey(panel: Boolean) = "${if (panel) "panel" else "bubble"}-${orientationKey()}"
 
+    private fun maxHeightPercent(): Int {
+        if (!tabsVisible) return 92
+        val height = bounds().second
+        val reserved = dp(navigatorHeightDp + navigatorGapDp + 10)
+        return (((height - reserved).coerceAtLeast(1) * 100f) / height.coerceAtLeast(1))
+            .toInt().coerceIn(32, 92)
+    }
+
     private fun loadSizePreferences() {
         val (width, height) = bounds()
         val suffix = orientationKey()
         panelWidthPercent = prefs.getInt("widthPct:$suffix", OverlayPanelSizing.defaultWidthPercent(width, height))
             .coerceIn(40, 95)
         panelHeightPercent = prefs.getInt("heightPct:$suffix", OverlayPanelSizing.defaultHeightPercent(width, height))
-            .coerceIn(32, 92)
+            .coerceIn(32, maxHeightPercent())
     }
     private fun sizes(panel: Boolean): Pair<Int, Int> {
         if (!panel) return dp(58) to dp(58)
         val (width, height) = bounds()
         val size = OverlayPanelSizing.calculate(width, height, resources.displayMetrics.density,
             panelWidthPercent, panelHeightPercent)
-        return size.width to size.height
+        val reserve = if (tabsVisible) dp(navigatorHeightDp + navigatorGapDp + 10) else dp(16)
+        return size.width to size.height.coerceAtMost((height - reserve).coerceAtLeast(dp(100)))
     }
     private fun clamp(params: WindowManager.LayoutParams) {
         val (w, h) = bounds()
-        val (x, y) = OverlayPanelSizing.clampPosition(params.x, params.y, params.width, params.height, w, h)
+        val (x, y) = if (expanded && tabsVisible) OverlayPanelSizing.clampPanelPosition(
+            params.x, params.y, params.width, params.height, w, h,
+            dp(navigatorHeightDp), dp(navigatorGapDp),
+        ) else OverlayPanelSizing.clampPosition(params.x, params.y, params.width, params.height, w, h)
         params.x = x
         params.y = y
     }
     private fun showWindow(panel: Boolean) {
         if (!Settings.canDrawOverlays(this)) { stopSelf(); return }
-        if (!panel) closeFolderEditor()
+        if (!panel) {
+            closeFolderEditor()
+            dismissNavigator()
+            menuVisible = false
+        }
         expanded = panel
         if (panel) loadSizePreferences() else resizeVisible = false
         val (width, height) = sizes(panel)
@@ -218,13 +242,13 @@ class BlueprintOverlayService : Service() {
     private fun resizePanel(widthPercent: Int, heightPercent: Int, save: Boolean) {
         if (!expanded) return
         panelWidthPercent = widthPercent.coerceIn(40, 95)
-        panelHeightPercent = heightPercent.coerceIn(32, 92)
+        panelHeightPercent = heightPercent.coerceIn(32, maxHeightPercent())
         val (w, h) = sizes(true)
         val p = params ?: return
         p.width = w
         p.height = h
         clamp(p)
-        try { root?.let { manager.updateViewLayout(it, p) } }
+        try { root?.let { manager.updateViewLayout(it, p) }; syncNavigator() }
         catch (_: Exception) { stopSelf(); return }
         if (save) prefs.edit {
             val orientation = orientationKey()
@@ -238,7 +262,7 @@ class BlueprintOverlayService : Service() {
     private fun moveTo(x: Int, y: Int, save: Boolean) {
         val p = params ?: return
         p.x = x; p.y = y; clamp(p)
-        try { root?.let { manager.updateViewLayout(it, p) } } catch (_: Exception) { stopSelf(); return }
+        try { root?.let { manager.updateViewLayout(it, p) }; syncNavigator() } catch (_: Exception) { stopSelf(); return }
         if (save) {
             val prefix = positionKey(expanded)
             prefs.edit {
@@ -297,7 +321,7 @@ class BlueprintOverlayService : Service() {
         row.addView(description)
         val seek = SeekBar(this).apply {
             min = if (isWidthControl) 40 else 32
-            max = if (isWidthControl) 95 else 92
+            max = if (isWidthControl) 95 else maxHeightPercent()
             progress = current
             contentDescription = "$labelText of blueprint overlay"
             setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
@@ -317,6 +341,117 @@ class BlueprintOverlayService : Service() {
         return row
     }
 
+    private fun switchTab(index: Int) {
+        val next = CoverFlowModel.selectedTab(index)
+        if (tab == next) return
+        tab = next
+        savedDocument?.mechanicMetadata?.id?.let { id -> prefs.edit { putInt("tab:$id", next) } }
+        menuVisible = false
+        resizeVisible = false
+        render()
+    }
+
+    private fun dismissNavigator() {
+        navigatorRoot?.let { try { manager.removeViewImmediate(it) } catch (_: Exception) { } }
+        navigatorRoot = null
+        navigatorParams = null
+        navigatorRenderedTab = -1
+    }
+
+    /** The navigation owns only its small visible touch footprint, entirely outside the panel. */
+    private fun syncNavigator() {
+        if (!expanded || !tabsVisible || root == null || navigatorUnavailable) { dismissNavigator(); return }
+        val panel = params ?: return
+        val (screenWidth, screenHeight) = bounds()
+        val navWidth = min(panel.width, dp(234)).coerceAtLeast(1)
+        val navHeight = dp(navigatorHeightDp)
+        val (x, y) = OverlayPanelSizing.navigatorPosition(
+            panel.x, panel.y, panel.width, panel.height, navWidth, navHeight,
+            dp(navigatorGapDp), screenWidth, screenHeight,
+        )
+        try {
+            if (navigatorRoot == null) {
+                val configuration = WindowManager.LayoutParams(navWidth, navHeight,
+                    WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
+                    WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL,
+                    PixelFormat.TRANSLUCENT).apply {
+                    gravity = Gravity.TOP or Gravity.START
+                    this.x = x
+                    this.y = y
+                }
+                val view = FrameLayout(this).apply { background = null; isClickable = true }
+                manager.addView(view, configuration)
+                navigatorRoot = view
+                navigatorParams = configuration
+            } else {
+                navigatorParams?.let { config ->
+                    config.width = navWidth; config.height = navHeight
+                    config.x = x; config.y = y
+                    navigatorRoot?.let { manager.updateViewLayout(it, config) }
+                }
+            }
+            if (navigatorRenderedTab != tab) renderNavigator()
+        } catch (_: Exception) {
+            // Some Android/game configurations may reject a second overlay window.
+            // Keep the working blueprint panel and fall back to menu-based navigation.
+            navigatorUnavailable = true
+            dismissNavigator()
+        }
+    }
+
+    private fun renderNavigator() {
+        val navigation = navigatorRoot ?: return
+        val previous = navigatorRenderedTab
+        navigation.removeAllViews()
+        navigatorRenderedTab = tab
+        val swatch = listOf("#325276", "#38446B", "#315E79")
+        val symbols = listOf("☑", "↗", "◇")
+        CoverFlowModel.cardOrder(tab).forEach { index ->
+            val centered = index == tab
+            val side = CoverFlowModel.cardSide(tab, index)
+            val startSide = if (previous >= 0) CoverFlowModel.cardSide(previous, index) else side
+            val tile = label("${symbols[index]}\n${CoverFlowModel.titles[index]}", if (centered) 13f else 12f, centered).apply {
+                gravity = Gravity.CENTER
+                background = background(swatch[index], 11)
+                contentDescription = "${CoverFlowModel.titles[index]} blueprint view${if (centered) ", selected" else ""}"
+                elevation = dp(if (centered) 7 else 2).toFloat()
+                cameraDistance = dp(700).toFloat()
+                rotationY = if (startSide == 0) 0f else if (startSide < 0) 40f else -40f
+                scaleX = if (startSide == 0) 1f else 0.82f
+                scaleY = if (startSide == 0) 1f else 0.82f
+                translationX = dp(64 * startSide).toFloat()
+                alpha = if (startSide == 0) 1f else 0.83f
+                // A card remains clickable through TalkBack as well as taps and flings.
+                setOnClickListener { switchTab(index) }
+                var touchX = 0f
+                setOnTouchListener { v, event ->
+                    when (event.actionMasked) {
+                        MotionEvent.ACTION_DOWN -> { touchX = event.rawX; true }
+                        MotionEvent.ACTION_MOVE -> true
+                        MotionEvent.ACTION_CANCEL -> true
+                        MotionEvent.ACTION_UP -> {
+                            val delta = event.rawX - touchX
+                            if (abs(delta) >= dp(30)) switchTab(CoverFlowModel.swipe(tab, delta, dp(30).toFloat()))
+                            else v.performClick()
+                            true
+                        }
+                        else -> false
+                    }
+                }
+            }
+            navigation.addView(tile, FrameLayout.LayoutParams(dp(82), dp(46), Gravity.CENTER))
+            if (previous >= 0 && previous != tab) {
+                // Short, gesture-triggered transition; no idle animator or background loop.
+                tile.animate().translationX(dp(64 * side).toFloat())
+                    .rotationY(if (side == 0) 0f else if (side < 0) 40f else -40f)
+                    .scaleX(if (centered) 1f else 0.82f)
+                    .scaleY(if (centered) 1f else 0.82f)
+                    .alpha(if (centered) 1f else 0.83f)
+                    .setDuration(170L).start()
+            }
+        }
+    }
+
     private fun render() {
         if (tab != 1 && (pendingFolderRootId != null || editingFolderId != null)) closeFolderEditor()
         val window = root ?: return
@@ -325,6 +460,7 @@ class BlueprintOverlayService : Service() {
         lastRenderedTab = tab
         window.removeAllViews()
         if (!expanded) {
+            dismissNavigator()
             val bubble = label("FN", 19f, true).apply {
                 background = background("#263E61", 30)
                 gravity = Gravity.CENTER
@@ -335,63 +471,99 @@ class BlueprintOverlayService : Service() {
             return
         }
         val guide = blueprint ?: return
-        val column = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; background = background("#181C2A") }
-        window.addView(column, FrameLayout.LayoutParams(-1, -1))
-        val toolbar = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
-        val handle = label("⋮⋮ ${guide.name}", 13f, true).apply {
-            contentDescription = "Drag blueprint window"
-            maxLines = 1
-            ellipsize = TextUtils.TruncateAt.END
+        val surface = FrameLayout(this).apply {
+            background = background("#181C2A")
+            clipToOutline = true
         }
-        toolbar.addView(handle, LinearLayout.LayoutParams(0, dp(38), 1f))
-        toolbar.addView(button(if (tabsVisible) "Tabs −" else "Tabs +") {
+        window.addView(surface, FrameLayout.LayoutParams(-1, -1))
+        if (tab == 2) {
+            showGraph(surface, guide)
+        } else {
+            val scroller = ScrollView(this).apply { isFillViewport = true }
+            val content = LinearLayout(this).apply {
+                orientation = LinearLayout.VERTICAL
+                // Minimal inset for the small floating drag/menu controls; otherwise full width.
+                setPadding(dp(10), dp(37), dp(10), dp(8))
+            }
+            scroller.addView(content)
+            surface.addView(scroller, FrameLayout.LayoutParams(-1, -1))
+            currentScroller = scroller
+            if (tab == 1 && linksScrollY > 0) scroller.post { scroller.scrollTo(0, linksScrollY) }
+            if (tab == 0) showSteps(content, guide) else showLinks(content, guide)
+        }
+
+        // Controls hover in the panel corners; they do not consume a whole toolbar row.
+        val handle = button("⋮⋮") { }.apply { contentDescription = "Drag floating blueprint" }
+        surface.addView(handle, FrameLayout.LayoutParams(dp(34), dp(30), Gravity.TOP or Gravity.START).apply {
+            leftMargin = dp(4); topMargin = dp(4)
+        })
+        drag(handle) { }
+        surface.addView(button(if (menuVisible) "×" else "⋯") {
+            menuVisible = !menuVisible
+            resizeVisible = false
+            render()
+        }.apply { contentDescription = "Blueprint window controls" },
+            FrameLayout.LayoutParams(dp(35), dp(30), Gravity.TOP or Gravity.END).apply {
+                rightMargin = dp(4); topMargin = dp(4)
+            })
+        if (menuVisible) renderControls(surface)
+        if (resizeVisible) renderSizeControls(surface)
+        syncNavigator()
+    }
+
+    private fun renderControls(surface: FrameLayout) {
+        val column = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            background = background("#252F47", 11)
+            setPadding(dp(5), dp(5), dp(5), dp(5))
+        }
+        if (navigatorUnavailable || !tabsVisible) {
+            CoverFlowModel.titles.forEachIndexed { index, title ->
+                column.addView(button("View $title") { switchTab(index) })
+            }
+        }
+        column.addView(button("Size") {
+            menuVisible = false
+            resizeVisible = true
+            render()
+        })
+        column.addView(button(if (tabsVisible) "Hide navigation" else "Show navigation") {
             tabsVisible = !tabsVisible
             prefs.edit { putBoolean("tabsVisible", tabsVisible) }
-            render()
-        })
-        toolbar.addView(button(if (resizeVisible) "Done" else "Size") {
-            resizeVisible = !resizeVisible
-            render()
-        })
-        toolbar.addView(button("−") { showWindow(false) }.apply { contentDescription = "Collapse blueprint to FN bubble" })
-        toolbar.addView(button("Stop") { stopSelf() })
-        column.addView(toolbar)
-        drag(handle) { }
-
-        if (resizeVisible) {
-            column.addView(slider("Width", isWidthControl = true))
-            column.addView(slider("Height", isWidthControl = false))
-            column.addView(button("Reset to compact size") {
-                val (w, h) = bounds()
-                resizePanel(OverlayPanelSizing.defaultWidthPercent(w, h),
-                    OverlayPanelSizing.defaultHeightPercent(w, h), save = true)
-                resizeVisible = false
-                render()
-            })
-        }
-        if (tabsVisible) {
-            val nav = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
-            listOf("Steps", "Links", "Graph").forEachIndexed { index, name ->
-                val tabButton = button(if (tab == index) "• $name" else name) { tab = index; render() }
-                tabButton.contentDescription = "Show $name blueprint tab"
-                nav.addView(tabButton, LinearLayout.LayoutParams(0, dp(34), 1f))
+            menuVisible = false
+            panelHeightPercent = panelHeightPercent.coerceAtMost(maxHeightPercent())
+            // Panel bounds change when the separate navigator is visible.
+            val p = params
+            if (p != null) {
+                val (w, h) = sizes(true); p.width = w; p.height = h; clamp(p)
+                try { root?.let { manager.updateViewLayout(it, p) } } catch (_: Exception) { stopSelf() }
             }
-            column.addView(nav)
-        }
-        val scroller = ScrollView(this).apply { isFillViewport = true }
-        val content = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            setPadding(dp(6), dp(2), dp(6), dp(8))
-        }
-        scroller.addView(content)
-        column.addView(scroller, LinearLayout.LayoutParams(-1, 0, 1f))
-        currentScroller = scroller
-        if (tab == 1 && linksScrollY > 0) scroller.post { scroller.scrollTo(0, linksScrollY) }
-        when (tab) {
-            0 -> showSteps(content, guide)
-            1 -> showLinks(content, guide)
-            else -> showGraph(content, guide)
-        }
+            render()
+        })
+        column.addView(button("Collapse to FN") { showWindow(false) })
+        column.addView(button("Stop overlay") { stopSelf() })
+        val scroll = ScrollView(this).apply { background = null; addView(column) }
+        val menuHeight = min(dp(172), ((params?.height ?: dp(250)) - dp(42)).coerceAtLeast(dp(46)))
+        surface.addView(scroll, FrameLayout.LayoutParams(dp(160), menuHeight, Gravity.TOP or Gravity.END).apply {
+            topMargin = dp(36); rightMargin = dp(4)
+        })
+    }
+
+    private fun renderSizeControls(surface: FrameLayout) {
+        val column = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; background = background("#27334F") }
+        column.addView(slider("Width", isWidthControl = true))
+        column.addView(slider("Height", isWidthControl = false))
+        column.addView(button("Reset compact") {
+            val (w, h) = bounds()
+            resizePanel(OverlayPanelSizing.defaultWidthPercent(w, h),
+                OverlayPanelSizing.defaultHeightPercent(w, h), save = true)
+            resizeVisible = false
+            render()
+        })
+        column.addView(button("Done") { resizeVisible = false; render() })
+        val scroll = ScrollView(this).apply { addView(column) }
+        val maxHeight = min(dp(168), ((params?.height ?: dp(250)) - dp(34)).coerceAtLeast(dp(46)))
+        surface.addView(scroll, FrameLayout.LayoutParams(-1, maxHeight, Gravity.BOTTOM))
     }
 
     private fun showSteps(layout: LinearLayout, guide: Blueprint) {
@@ -611,69 +783,55 @@ class BlueprintOverlayService : Service() {
         }
     }
 
-    private fun showGraph(layout: LinearLayout, guide: Blueprint) {
+    /** Full-bleed graph: changing inspectors never changes the graph viewport or node positions. */
+    private fun showGraph(surface: FrameLayout, guide: Blueprint) {
         val graph = BlueprintGraphView(this).apply {
             bind(guide)
             setFocus(focusedGraphId)
         }
-        val topControlsDp = 38 + (if (tabsVisible) 34 else 0) + (if (resizeVisible) 104 else 0)
-        val available = ((params?.height ?: dp(260)) - dp(topControlsDp + 14)).coerceAtLeast(dp(88))
-        val frame = FrameLayout(this)
-        frame.addView(graph, FrameLayout.LayoutParams(-1, -1))
-        frame.addView(button("Fit") { graph.fitToContent() }.apply {
-            contentDescription = "Fit all saved devices and bindings into the blueprint graph"
-        }, FrameLayout.LayoutParams(dp(58), dp(32), Gravity.TOP or Gravity.END).apply {
-            topMargin = dp(4)
-            rightMargin = dp(4)
+        surface.addView(graph, FrameLayout.LayoutParams(-1, -1))
+        surface.addView(button("Fit") { graph.fitToContent() }.apply {
+            contentDescription = "Fit all saved devices and bindings"
+        }, FrameLayout.LayoutParams(dp(46), dp(30), Gravity.TOP or Gravity.END).apply {
+            topMargin = dp(4); rightMargin = dp(45)
         })
-        val frameParams = LinearLayout.LayoutParams(-1, available)
-        layout.addView(frame, frameParams)
-        val inspector = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
-        layout.addView(inspector)
-        val focusLabel = label("Hold node: focus direct links · double-tap empty: clear", 11f)
-        layout.addView(focusLabel)
-        fun selectedPanel() {
-            inspector.removeAllViews()
-            val device = guide.devices.firstOrNull { it.id == selectedGraphId }
-            frameParams.height = if (device == null) available else (available * 0.54f).toInt().coerceAtLeast(dp(80))
-            frame.layoutParams = frameParams
-            if (device == null) return
-            inspector.addView(button("✕  ${device.name} · close settings") {
-                selectedGraphId = null
-                selectedPanelReset(graph, inspector, frame, frameParams, available)
-            })
-            inspector.addView(label("${device.type} — saved settings", 12f, true))
-            device.options.forEach { inspector.addView(label("${it.name}: ${it.value}", 12f)) }
-            device.notes?.takeIf { it.isNotBlank() }?.let { inspector.addView(label("Builder note: $it", 12f)) }
-            inspector.addView(label("Direct event bindings", 12f, true))
-            val links = BlueprintConnections.touching(guide, device.id)
-            if (links.isEmpty()) inspector.addView(label("No direct bindings", 12f))
-            links.forEach { link ->
-                inspector.addView(label("${link.sourceName} / ${link.eventName} → ${link.targetName} / ${link.functionName}", 12f))
+        val inspectorArea = FrameLayout(this)
+        surface.addView(inspectorArea, FrameLayout.LayoutParams(-1, -2, Gravity.BOTTOM))
+        val focusLabel = label("", 11f)
+        surface.addView(focusLabel, FrameLayout.LayoutParams(-2, dp(28), Gravity.TOP or Gravity.CENTER_HORIZONTAL).apply {
+            topMargin = dp(4)
+        })
+        fun updateInspector() {
+            inspectorArea.removeAllViews()
+            val device = guide.devices.firstOrNull { it.id == selectedGraphId } ?: return
+            val details = LinearLayout(this).apply {
+                orientation = LinearLayout.VERTICAL
+                background = background("#26334E", 10)
             }
-            inspector.addView(button("Open in Links") { linkSelectedId = device.id; tab = 1; render() })
+            details.addView(button("×  ${device.name} · close") {
+                selectedGraphId = null
+                inspectorArea.removeAllViews()
+            })
+            details.addView(label("${device.type} — configured options", 12f, true))
+            device.options.forEach { details.addView(label("${it.name}: ${it.value}", 12f)) }
+            device.notes?.takeIf { it.isNotBlank() }?.let { details.addView(label("Note: $it", 12f)) }
+            val links = BlueprintConnections.touching(guide, device.id)
+            details.addView(label("Bindings (${links.size})", 12f, true))
+            links.forEach { link -> details.addView(label("${link.sourceName} / ${link.eventName} → ${link.targetName} / ${link.functionName}", 12f)) }
+            details.addView(button("Explore in Links") { linkSelectedId = device.id; switchTab(1) })
+            val scroll = ScrollView(this).apply { isFillViewport = false; addView(details) }
+            val maxHeight = ((params?.height ?: dp(250)) * 0.48f).toInt().coerceAtLeast(dp(85))
+            inspectorArea.addView(scroll, FrameLayout.LayoutParams(-1, maxHeight))
         }
-        graph.onNodeTap = { id ->
-            selectedGraphId = id
-            // Rebuild only the inspector; keep the same graph view and current gestures.
-            selectedPanel()
-        }
+        graph.onNodeTap = { id -> selectedGraphId = id; updateInspector() }
         graph.onFocusChanged = { id ->
             focusedGraphId = id
-            focusLabel.text = if (id == null) "Hold node: focus direct links · double-tap empty: clear"
-                else "Focus: ${guide.devices.firstOrNull { it.id == id }?.name ?: "Device"} · double-tap empty to clear"
+            focusLabel.text = if (id == null) "" else "Focused: ${guide.devices.firstOrNull { it.id == id }?.name ?: "Device"}"
         }
-        if (selectedGraphId != null) graph.onNodeTap(selectedGraphId)
-        if (focusedGraphId != null) graph.onFocusChanged(focusedGraphId)
-        if (guide.devices.isEmpty()) layout.addView(label("Add devices to the saved mechanic to see its graph."))
-    }
-
-    private fun selectedPanelReset(graph: BlueprintGraphView, inspector: LinearLayout, frame: FrameLayout,
-        frameParams: LinearLayout.LayoutParams, available: Int) {
-        inspector.removeAllViews()
-        frameParams.height = available
-        frame.layoutParams = frameParams
-        graph.invalidate()
+        updateInspector()
+        graph.onFocusChanged(focusedGraphId)
+        if (guide.devices.isEmpty()) surface.addView(label("Add devices to see the saved graph."),
+            FrameLayout.LayoutParams(-2, -2, Gravity.CENTER))
     }
 
     override fun onConfigurationChanged(newConfig: Configuration) {
@@ -682,6 +840,7 @@ class BlueprintOverlayService : Service() {
         if (root != null) showWindow(expanded)
     }
     override fun onDestroy() {
+        dismissNavigator()
         root?.let { try { manager.removeViewImmediate(it) } catch (_: Exception) { } }
         root = null; params = null
         work.cancel()

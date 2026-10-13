@@ -1,3 +1,11 @@
+## Cover Flow navigation and full-bleed blueprint — 2026-10-13 (source candidate)
+
+- Based on live `main` commit `363dde7c` (Android CI run `38458909239` green); owner screenshot establishes Graph and node inspector above Fortnite. This navigation revision is NOT yet CI/phone-certified.
+- Moves the Steps / Links / Graph navigator outside the dark-blue blueprint workspace, into a small, separately bounded transparent `TYPE_APPLICATION_OVERLAY` window below the panel. Three overlapping perspective-angled cards support tap or horizontal swipe, with Graph selected by default for new overlay sessions. No whole-screen invisible touch surface.
+- Replaces full-width toolbar/tab rows with a small drag grip and contextual controls (`⋯` → Size, Hide/Show navigation, Collapse, Stop). Width/height controls and orientation-specific positions remain; the panel height is capped to leave space below for the carousel.
+- The Graph fills its panel edge to edge. Tap-to-inspect opens a scrollable bottom sheet over the graph instead of shrinking the diagram; Fit and one-hop focus/clear remain available. Steps and Links use full-height scrolling panels and retain their existing device folder editing.
+- Keeps the passive foreground service, notification Stop, Room schema 1, format-2 `.c1logic`, simulator and signing infrastructure unchanged. Adds pure Kotlin carousel-selection/navigation-geometry tests. New Android lint, emulator and owner Fortnite checks are required.
+
 # Changelog
 
 ## 2026-10-13 — Practical blueprint workflow (uncertified candidate)
