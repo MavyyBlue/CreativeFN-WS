@@ -1,3 +1,19 @@
+# 2026-10-14 — Value-test clarity, replay and event search (new source candidate)
+
+**Verified live source:** `main` at `b35e5d49a99fdcff74784f16ce6a3ac3b24b16f8` from source-import of the previous selector repair. GitHub Android [run 38526399064](https://github.com/MavyyBlue/CreativeFN-WS/actions/runs/38526399064) **build PASSED**, including Kotlin, JVM, strict Lint, and signed debug APK. **launch-smoke failed before starting instrumentation** because `sdkmanager` tried to install Android Emulator and reported `Error on ZipFile unknown archive` (runner/SDK infrastructure). No emulator tests ran in that run and no report was generated. The prior run `38499156610` had **16/17** emulator tests passing and a targeted Compose search-box-vs-card-selector failure; that selector fix is in the current live main but was **not retested** because this later emulator never installed.
+
+This source candidate adds Phase 5.2 **honest trace interpretation** and Phase 9 **mobile action-menu usability**:
+
+- `ValueSignalReport` supplies exact counts of manually injected inputs, documented events, received functions, modeled state changes, unmodeled effects and safety stops; exports a plain text, ordered trace and per-device state without implying Fortnite runtime fidelity.
+- `ValueScenarioReplay` replays up to **128 manual inputs** in explicit order from a fresh **volatile** simulator, running each input to idle; no Room, blueprint or Fortnite data is altered. Actions exposes Queue, Replay and Clear inputs. Replay intentionally does **not** promise to reproduce a series of interleaved Queues/Steps; each injected event runs to idle before the next.
+- The event selector is now a searchable, lazily rendered list for graphs with many documented Event ports; the existing test tags/Run/Step/Reset/Queue/Output journey remain. Output offers **Copy report**, with system clipboard only and no permission/network requirement.
+- New pure JVM regression tests cover truthful pending/unsupported reports, deterministic replay, safety stops and 128-action limit. Source-only staging; no Android CI results for these new changes yet.
+- **Critical:** This ZIP cannot alter `.github/workflows/` (importer correctly protects workflows). The Android Emulator SDK archive problem is **not a product-code issue** and is not fixed by this ZIP. Retry GitHub Actions `launch-smoke` on a runner with a valid Emulator SDK download, or explicitly change workflow provisioning separately if failure repeats. Do **not** remove the emulator gate or claim green based on the build job alone.
+
+**Acceptance:** import this ZIP, confirm tested head, require build and launch-smoke green, then phone-test input search, actor/value, queue/run/step, replay, copy report, unsupported warnings, and existing overlay, Library, signing, autosave, and app navigation. Existing 208 reference devices are research-backed, not verified 1:1 Fortnite device menus.
+
+---
+
 # Research catalog emulator regression: targeted selector repair (2026-10-13)
 
 Source baseline: live GitHub `main` `5ffcc894194a045b2b3df17444dc14c6bbb771b0`, imported from the broad research/value-signal bundle. Android Actions [run 38499156610](https://github.com/MavyyBlue/CreativeFN-WS/actions/runs/38499156610) **failed overall**, despite the **build** job (JVM tests, strict Android Lint and APK assembly) passing. Emulator `launch-smoke` executed 17 instrumentation tests: **16 passed, 1 failed**. The downloaded `launch-smoke-reports` artifact identifies `ValueSignalUiTest.researchDeviceHasManualEventActionWithoutChangingOriginalScene` failing at its `Mutator Zone` selection: Compose matched both the editable `Search devices` field (containing the query) and the device card. This is an ambiguous test selector, not an observed simulator failure. The original runtime portion of that single test was not reached.

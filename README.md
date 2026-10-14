@@ -1,3 +1,11 @@
+## Value testing (2026-10-14 candidate)
+
+CreativeFN WS plans direct Creative 1.0 device bindings. Reference-only device entries are **not** a certified copy of every current Fortnite settings menu. In Value Test, open **Actions +**, choose/search a documented event, supply an actor and a value, then **Queue event** and **Run** or **Step**. The event is **injected**: collision, gameplay prerequisites, team/player state and other physical conditions were not simulated. The values output identifies modeled state transitions and explicitly labels unsupported function effects.
+
+**Replay** repeats the recorded manual inputs in order from a reset, processing each fully before the next. **Clear inputs** empties only the in-memory test scenario. **Copy report** puts a plain-text state/trace report on the Android clipboard; it is not uploaded or saved in the blueprint. The scenario and trace disappear when leaving the test scene. Runtime remains limited; test the real device settings and mechanics inside Fortnite before publishing.
+
+CI status: current predecessor `b35e5d49` built successfully in run `38526399064`; emulator runner could not install its SDK ZIP, so smoke tests have **not** passed for that predecessor. The new candidate needs fresh Android build, strict Lint, emulator smoke, fixed signing check and phone acceptance.
+
 > **CI correction (2026-10-13):** Android run [38499156610](https://github.com/MavyyBlue/CreativeFN-WS/actions/runs/38499156610) compiled and passed Lint/JVM checks, but 1 of 17 emulator UI tests failed because the Mutator Zone search field and device card shared the same text matcher. The next source ZIP fixes only that test selector; it does not modify production or certify the device expansion. Await new green build + launch-smoke and phone acceptance.
 
 # CreativeFN WS / Creative Logic Mobile

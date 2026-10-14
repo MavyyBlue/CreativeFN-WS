@@ -1,3 +1,11 @@
+## 2026-10-14 update — after source catalog expansion
+
+- **Phase 4 reference breadth:** 208 devices (eight original plus 200 research-backed), **catalogue/reference only**. Actual live Creative 1.0 menus and unmodeled functions remain verification work; not complete Fortnite fidelity.
+- **Phase 5.2 trace interpretation:** source candidate now shows input, event/function, modeled value, unsupported and safety counts, state report and plain-text export. Pending Android CI and phone acceptance.
+- **Phase 5.3 value scenario composition:** source candidate now supports bounded (128) repeatable in-memory event sequences with per-event Run-to-idle semantics. Persistent scenario templates/automatic Fortnite conditions are **not** implemented.
+- **Phase 9 usability:** lazy searchable event picker for many researched ports and compact report controls. More profiling, large-options UX, font-size/landscape testing remain open.
+- **CI gate:** run `38526399064` built successfully, but emulator setup failed while unzipping Android Emulator SDK; no connected tests ran. Retry emulator on healthy SDK supply. Workflows are protected from the upload ZIP and were not modified.
+
 > **Gate update, 2026-10-13:** Research catalog + value-test source was imported at `5ffcc894` but **is not certified**: run [38499156610](https://github.com/MavyyBlue/CreativeFN-WS/actions/runs/38499156610) had `build` PASS / `launch-smoke` FAIL (16/17 emulator tests passed). `ValueSignalUiTest` selected an ambiguous Mutator Zone text match. A test-selector-only corrective source ZIP is ready; full Android and owner phone acceptance remain pending. No device fidelity claim changes.
 
 ## Expanded documentation catalog and manual value test (uncertified source)

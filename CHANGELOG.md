@@ -1,3 +1,11 @@
+## 2026-10-14 — Test report, manual scenario replay, and large-catalog event search (CI candidate)
+
+- Checked run `38526399064`: build green; emulator setup failed with `Error on ZipFile unknown archive` before connected tests launched; selector repair still awaits emulator confirmation.
+- Added user-readable, plain-text-copyable value test report distinguishing input injection, received functions, modeled changes, unsupported effects and loop stops. No claim of Fortnite gameplay simulation.
+- Added bounded, deterministic, volatile multi-input replay (up to 128 inputs) and searchable event selection with a lazy list. The original 208-device reference catalog and narrow eight-device prototype remain untouched.
+- Added pure JVM tests for report, unsupported paths, replay ordering, limit handling and safety-stop summaries; not yet certified by Android CI.
+- Kept Room, `.c1logic`, device ports/defaults, graph engine, overlay service, signing, Gradle and `.github` files untouched. The emulator SDK download corruption is an independent CI infrastructure issue; the source-only ZIP cannot repair `.github` provisioning.
+
 ## 2026-10-13 — Focused UI-test selector correction (CI pending)
 
 - Investigated [Android run 38499156610](https://github.com/MavyyBlue/CreativeFN-WS/actions/runs/38499156610) and its actual downloaded launch-smoke report at expanded commit `5ffcc894194a045b2b3df17444dc14c6bbb771b0`. Android build/Lint/JVM/package job **passed**; 16 of 17 emulator instrumentation tests passed; one failed during device search selection.
