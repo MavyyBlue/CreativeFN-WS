@@ -1,3 +1,7 @@
+## Expanded documentation catalog and manual value test (uncertified source)
+
+At green predecessor `b531f0b7` (Android run `38495461646`, owner acceptance reported), add 200 research-scope device entries without changing the eight old IDs/options. Source evidence is reference-only. The 207 Creative-doc-scope items included 7 preexisting titles/IDs; 200 additional types are placed in the device palette (208 total). All 200 use unspecified text setting values, documented port labels and official-source links; no unverified Fortnite defaults are manufactured. For mixed/new graphs, manually inject source events and inspect value changes/unsupported deliveries through deterministic graph routing. Legacy-only graphs keep the existing engine. CI/Lint/emulator, signing and phone acceptance pending. Subsequent work: targeted semantics per function, formal catalog-version migration, larger graph/option editor profiling.
+
 # Roadmap — CreativeFN WS
 
 Status is based on implementation evidence. A green Android build and a separate owner device check certify an APK, not parity with Fortnite Creative 1.0.
@@ -8,13 +12,13 @@ Status is based on implementation evidence. A green Android build and a separate
 | 1 | Eight-device draft catalog, semantic ports | Established; real Fortnite fidelity incomplete |
 | 2 | Touch graph canvas, bindings, history, autosave | Established; phone-accepted |
 | 3 | Deterministic prototype, manual actions, traces | Established, bounded by explicit unsupported settings |
-| 4 | Source-backed fidelity and selective additional devices | In progress; no new types this slice; live Creative 1.0 comparisons required |
+| 4 | Source-backed fidelity and selective additional devices | **Research reference expansion source candidate:** 200 additive reference-only devices, not verified live menus; live Creative 1.0 comparisons required |
 | 5.1 | Pre-build configuration and graph diagnostics | **Certified** at `a6384c23`; Android run 38490221585 green and owner phone-accepted |
-| 5.2 | Friendly runtime trace interpretation and debugging | Next bounded slice |
+| 5.2 | Friendly runtime trace interpretation and debugging | Value-signal Actions source candidate: manual injected events + actor/value, deterministic routing and unsupported markers |
 | 6 | Saved mechanics, search, folders, `.c1logic` | Per-mechanic device folders and import/export established; Library-wide folders/previews deferred |
 | 7 | Construction guide and checklist | Established, including Phase 5.1 diagnostic warnings (owner accepted) |
 | 8 | Floating Fortnite reference overlay | **Owner phone-accepted at `9a05ebbd`**: Cover Flow, inline expanding nodes, pan/pinch, Fit, focus, Steps/Links |
-| 9 | Lifecycle, large graphs, profile and UX acceptance | In progress: editor declutter/navigation changes in **uncertified source candidate**; profiling pending |
+| 9 | Lifecycle, large graphs, profile and UX acceptance | Editor declutter **owner phone-accepted** at `b531f0b7`; profiling pending |
 
 ## Phase 5.1 previously completed acceptance
 

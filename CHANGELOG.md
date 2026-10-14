@@ -1,3 +1,10 @@
+## 2026-10-13 — Research catalog and value-signal testing (CI candidate)
+
+- Based on live green `b531f0b7` (Android run `38495461646`) and owner phone acceptance of editor declutter.
+- Append 200 reference-only device definitions from Creative documentation research (208 including eight stable legacy types). Bundle 3,745 named configurable text fields, 529 documented event labels and 978 function labels from those 200 records. No inferred official defaults; no UEFN-only, retired or branded-only records.
+- Add manual value/event Actions path with actor and input value, deterministic binding execution, targeted boolean/progress state changes, unsupported-operation trace and loop bounds; preserve old eight-device simulator.
+- Add standalone value-engine tests, new Android UI source test and research catalog validation. No change to Room schema, graph wire version, overlay service, signing or Gradle workflows. Source package NOT YET Android CI- or phone-certified.
+
 ## 2026-10-13 — Full-height builder workspace (new source candidate)
 
 - Starting from owner-accepted commit `a6384c23e3a1cc1725688baa42e792444b5ff8ce` / Android green run [38490221585](https://github.com/MavyyBlue/CreativeFN-WS/actions/runs/38490221585). This source package has **no new Android CI certification** yet.

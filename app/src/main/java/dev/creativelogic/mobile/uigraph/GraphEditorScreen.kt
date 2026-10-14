@@ -18,6 +18,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.creativelogic.catalog.InitialDeviceCatalog
 import dev.creativelogic.graph.*
 import dev.creativelogic.mobile.uisimulator.PrototypeSimulatorOverlay
+import dev.creativelogic.mobile.uisimulator.ValueSignalSimulatorOverlay
 import dev.creativelogic.model.*
 import kotlinx.coroutines.launch
 import kotlin.math.*
@@ -82,7 +83,11 @@ private fun GraphEditorContent(session: GraphDraftSession) {
         } else {
             LogicCanvas(graph, null, { }, { }, { _, _ -> }, { _, _ -> },
                 { _, _, _ -> }, { session.editor.viewport(it); session.markDirty() }, readOnly = true)
-            PrototypeSimulatorOverlay(simulatorGraph!!)
+            if (simulatorGraph!!.devices.any { it.deviceTypeId !in setOf(
+                "trigger", "tracker", "barrier", "hud-message", "button",
+                "round-settings", "creature-manager", "elimination-manager"
+            ) }) ValueSignalSimulatorOverlay(simulatorGraph!!)
+            else PrototypeSimulatorOverlay(simulatorGraph!!)
         }
         // A compact dial opens into a fan; choosing anything closes it again.
         GraphToolDial(

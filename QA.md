@@ -1,3 +1,13 @@
+## Broad reference catalog / value scenario candidate (awaiting CI)
+
+Verified predecessor: `b531f0b7`, GitHub Actions run [38495461646](https://github.com/MavyyBlue/CreativeFN-WS/actions/runs/38495461646) green; owner says editor declutter works on phone. This **new** research/value testing source has not completed Android Gradle, strict Lint, launch-smoke or phone acceptance.
+
+- Device catalog regression test preserves eight original device IDs/order, validates 200 additive reference-only definitions and round-trips configuration values. Confirm resources survive packaging. Research data includes 3,745 unique extracted setting labels, 529 events and 978 functions across new definitions.
+- `ValueSignalSessionTest`: explicit zone event → assigned Tracker completion → Barrier disable; unmodeled Item Granter function followed by manually injected outcome; reject invented event names; event-cycle safety stops. Four focused tests pass under an independent `kotlinc` mock-model harness; **not** full Gradle/module integration.
+- `ValueSignalUiTest`: add Mutator Zone from search, enter VALUE TEST, queue documented event, run, inspect trace. Requires actual connected instrumentation execution, not assumed.
+- Regression to verify original Eight-only simulator's exact fixtures unchanged, Room documents, `.c1logic` import/export, Guide and device folders, giant options sheets, overlay launch, Cover Flow and inline card expand still work. No signing changes.
+- Important support boundary: port names from documentation research are not actual user-input events; injected events deliberately bypass game conditions. Every unsupported function must be identified rather than implicitly treated as simulated. Free-text setting fields are intentionally **not** proof of actual option types/defaults.
+
 ## Editor/navigation declutter acceptance (new candidate)
 
 Certified predecessor `a6384c23e3a1cc1725688baa42e792444b5ff8ce` passed Android CI [38490221585](https://github.com/MavyyBlue/CreativeFN-WS/actions/runs/38490221585) and owner diagnostics acceptance. **This UI source requires a separate Android build, strict Lint, emulator smoke and phone acceptance.**

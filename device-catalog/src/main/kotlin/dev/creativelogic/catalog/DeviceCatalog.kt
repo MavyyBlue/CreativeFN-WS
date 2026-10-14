@@ -53,9 +53,8 @@ object InitialDeviceCatalog {
         listOf("Epic documents these direct-binding ports. Only the displayed subset of options is represented.", "Experimental event-only sandbox; not verified 1:1 against a live Fortnite Creative island. Unrepresented game rules are not simulated."),
         "https://dev.epicgames.com/documentation/en-us/fortnite-creative/$path-in-fortnite-creative",
     )
-    // 0.2 is additive. Legacy 0.1 graphs are migrated by the explicit wire decoders.
-    // Epic reference pages checked 2026-10-12; Fortnite live behavior remains unverified.
-    val catalog = DeviceCatalog(1, "0.2.0-draft", null, null, listOf(
+    // Keep legacy IDs/options/defaults/port names unchanged. Additive reference-only research records do NOT overwrite them.
+    val catalog: DeviceCatalog by lazy { DeviceCatalog(1, "0.2.0-draft", null, null, listOf(
         device("trigger", "Trigger", "Logic", listOf(
             bool("enabledOnGameStart", "Enabled on Game Start", true), bool("triggeredByPlayer", "Triggered by Player", true),
             integer("timesCanTrigger", "Times Can Trigger", 0),
@@ -68,8 +67,6 @@ object InitialDeviceCatalog {
         device("barrier", "Barrier", "World", listOf(
             enum("enabledDuringPhase", "Enabled During Phase", "Always", "None", "Always", "Pre-Game Only", "Gameplay Only"),
         ), emptyList(), listOf(function("enable", "Enable"), function("disable", "Disable")), "using-barrier-devices"),
-        // Ports are verbatim concepts from Epic's Direct Event Binding tables.
-        // Option lists contain ONLY the narrow subset modeled by our deterministic sandbox.
         device("hud-message", "HUD Message", "Presentation", listOf(
             DeviceOptionDefinition("message", "Message", DeviceOptionKind.TEXT, DeviceOptionValue.TextValue("Vault open!")),
             bool("showOnRoundStart", "Show on Round Start", false),
@@ -93,5 +90,5 @@ object InitialDeviceCatalog {
             bool("validOnSelfElimination", "Valid on Self-Elimination", false),
         ), listOf(event("onEliminated", "On Eliminated"), event("onElimination", "On Elimination")),
             listOf(function("enable", "Enable"), function("disable", "Disable")), "using-elimination-manager-devices"),
-    ))
+    ) + ResearchDeviceDefinitions.load()) }
 }

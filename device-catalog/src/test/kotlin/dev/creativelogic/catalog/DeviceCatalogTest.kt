@@ -7,11 +7,11 @@ import java.util.UUID
 
 class DeviceCatalogTest {
     private val catalog = InitialDeviceCatalog.catalog
-    private fun rejects(action: () -> Unit) {
-        try { action(); fail("Expected rejection") } catch (_: IllegalArgumentException) { }
-    }
+    private fun rejects(action: () -> Unit) { try { action(); fail("Expected rejection") } catch (_: IllegalArgumentException) { } }
     @Test fun catalogHasUniqueTypedPortsAndHonestVersionMetadata() {
-        assertEquals(listOf("trigger", "tracker", "barrier", "hud-message", "button", "round-settings", "creature-manager", "elimination-manager"), catalog.definitions.map { it.deviceTypeId })
+        assertEquals(listOf("trigger", "tracker", "barrier", "hud-message", "button", "round-settings", "creature-manager", "elimination-manager"),
+            catalog.definitions.take(8).map { it.deviceTypeId })
+        assertEquals(208, catalog.definitions.size)
         assertEquals(1, catalog.catalogSchemaVersion)
         assertNull(catalog.lastVerifiedDate); assertNull(catalog.fortniteReferenceVersion)
         catalog.definitions.forEach { d ->
