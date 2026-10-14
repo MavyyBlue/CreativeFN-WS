@@ -17,7 +17,10 @@ class ValueSignalUiTest {
         compose.onNodeWithTag("graph-tools-toggle").performClick()
         compose.onNodeWithTag("graph-devices").performClick()
         compose.onNodeWithText("Search devices").performTextInput("Mutator Zone")
-        compose.onNodeWithText("Mutator Zone", substring = false).performClick()
+        // The search box also contains "Mutator Zone". Select the clickable,
+        // non-editable device card, not the search input's editable semantics node.
+        compose.onNode(hasText("Mutator Zone", substring = false) and
+            hasClickAction() and !hasSetTextAction()).performClick()
         compose.onNodeWithTag("graph-tools-toggle").performClick()
         compose.onNodeWithTag("graph-simulation-toggle").performClick()
         compose.onNodeWithText("VALUE TEST · manual events, not Fortnite gameplay").assertIsDisplayed()

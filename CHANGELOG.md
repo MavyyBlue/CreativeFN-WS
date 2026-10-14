@@ -1,3 +1,9 @@
+## 2026-10-13 — Focused UI-test selector correction (CI pending)
+
+- Investigated [Android run 38499156610](https://github.com/MavyyBlue/CreativeFN-WS/actions/runs/38499156610) and its actual downloaded launch-smoke report at expanded commit `5ffcc894194a045b2b3df17444dc14c6bbb771b0`. Android build/Lint/JVM/package job **passed**; 16 of 17 emulator instrumentation tests passed; one failed during device search selection.
+- Updated `ValueSignalUiTest` to distinguish the clickable Mutator Zone device card from the editable search field containing the same phrase. Subsequent simulation/assertion steps remain intact.
+- No production source, reference device catalog, simulator, overlay, schema, signing, dependency, importer or workflow changes. The corrected test still needs remote Android CI and owner phone acceptance before any certification claim.
+
 ## 2026-10-13 — Research catalog and value-signal testing (CI candidate)
 
 - Based on live green `b531f0b7` (Android run `38495461646`) and owner phone acceptance of editor declutter.

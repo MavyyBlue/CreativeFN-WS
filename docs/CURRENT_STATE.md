@@ -1,3 +1,13 @@
+# Research catalog emulator regression: targeted selector repair (2026-10-13)
+
+Source baseline: live GitHub `main` `5ffcc894194a045b2b3df17444dc14c6bbb771b0`, imported from the broad research/value-signal bundle. Android Actions [run 38499156610](https://github.com/MavyyBlue/CreativeFN-WS/actions/runs/38499156610) **failed overall**, despite the **build** job (JVM tests, strict Android Lint and APK assembly) passing. Emulator `launch-smoke` executed 17 instrumentation tests: **16 passed, 1 failed**. The downloaded `launch-smoke-reports` artifact identifies `ValueSignalUiTest.researchDeviceHasManualEventActionWithoutChangingOriginalScene` failing at its `Mutator Zone` selection: Compose matched both the editable `Search devices` field (containing the query) and the device card. This is an ambiguous test selector, not an observed simulator failure. The original runtime portion of that single test was not reached.
+
+This source-only repair updates **only that instrumentation matcher** to select a clickable, non-editable device entry. All production Kotlin, original and new device definitions, simulation rules, Room data, graph formats, Android UI, floating overlay, permissions, signing, Gradle versions, and workflows remain byte-for-byte unchanged. The package also records the failed evidence in docs and carries the four unmodified importer-required foundation paths. The failed CI run does **not** certify the new 208-device expansion.
+
+New acceptance gate: import the corrective ZIP, verify the expanded source SHA, and require BOTH Android `build` and `launch-smoke` green on that SHA, with 17/17 emulator tests (or the full actual suite count). Then verify signing compatibility and test device search, Value Test, save/reopen and the floating overlay on the owner's Android phone. This patch is locally ZIP/importer-validated but the corrected selector has **not** been executed on an Android emulator yet.
+
+---
+
 # Current state — CreativeFN WS (2026-10-13)
 
 ## Research catalog + manual value signals — source candidate, 2026-10-13

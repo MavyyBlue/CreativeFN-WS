@@ -1,3 +1,5 @@
+> **CI correction (2026-10-13):** Android run [38499156610](https://github.com/MavyyBlue/CreativeFN-WS/actions/runs/38499156610) compiled and passed Lint/JVM checks, but 1 of 17 emulator UI tests failed because the Mutator Zone search field and device card shared the same text matcher. The next source ZIP fixes only that test selector; it does not modify production or certify the device expansion. Await new green build + launch-smoke and phone acceptance.
+
 # CreativeFN WS / Creative Logic Mobile
 
 An **offline Android workshop** for building Fortnite Creative **1.0** device-mechanic plans on a phone. Create a logic graph, configure devices, wire Event → Function ports, test a deliberately bounded deterministic sandbox, save the mechanism and produce step-by-step construction blueprints. A user-started, passive Android floating FN overlay lets you consult Steps, Links/folders and an expandable Graph while Fortnite is open. It never inspects or controls Fortnite.

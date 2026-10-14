@@ -1,3 +1,9 @@
+## Value Test instrumentation failure and correction — 2026-10-13
+
+Android run [38499156610](https://github.com/MavyyBlue/CreativeFN-WS/actions/runs/38499156610), tested imported commit `5ffcc894194a045b2b3df17444dc14c6bbb771b0`: `build` passed (including JVM tests, Android strict Lint, APK assembly); `launch-smoke` failed at `:app:connectedDebugAndroidTest`. Actual downloaded connected-test report: **17 tests / 1 failure / 0 skipped**. The failed case was `ValueSignalUiTest.researchDeviceHasManualEventActionWithoutChangingOriginalScene`, at line 20, before selecting the Mutator Zone device. The exact failure was "Expected exactly '1' node but found '2'" because both the `Search devices` editable field and the filtered `Mutator Zone` result matched the text predicate.
+
+The corrective test now uses `hasText(..., substring=false) and hasClickAction() and !hasSetTextAction()` to identify the device card, excluding the search field. It does not weaken assertions for the subsequent scenario flow. Production source is not changed. New full emulator execution and real-device confirmation are still required; do not infer 17/17 merely from local source review.
+
 ## Broad reference catalog / value scenario candidate (awaiting CI)
 
 Verified predecessor: `b531f0b7`, GitHub Actions run [38495461646](https://github.com/MavyyBlue/CreativeFN-WS/actions/runs/38495461646) green; owner says editor declutter works on phone. This **new** research/value testing source has not completed Android Gradle, strict Lint, launch-smoke or phone acceptance.
