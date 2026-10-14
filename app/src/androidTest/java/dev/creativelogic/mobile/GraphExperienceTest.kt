@@ -11,7 +11,9 @@ class GraphExperienceTest {
     private fun waitForGraph() = compose.waitUntil(10_000) {
         compose.onAllNodes(hasTestTag("logic-canvas")).fetchSemanticsNodes().isNotEmpty()
     }
+    private fun openTools() = compose.onNodeWithTag("graph-tools-toggle").performClick()
     private fun add(name: String) {
+        openTools()
         compose.onNodeWithTag("graph-devices").performClick()
         compose.onNodeWithText(name).performClick()
         waitForGraph()
@@ -35,11 +37,13 @@ class GraphExperienceTest {
         waitForGraph()
         add("Trigger"); add("Tracker"); add("Barrier")
         compose.onNodeWithTag("logic-canvas").assert(hasStateDescription("3 devices, 0 bindings"))
+        openTools()
         compose.onNodeWithTag("graph-devices").performClick()
         compose.onNodeWithText("Placed").performClick()
         compose.onNodeWithText("Tracker_1").performClick()
         compose.onNodeWithText("Target Value").performScrollTo().performTextReplacement("5")
         compose.onNodeWithText("Done").performScrollTo().performClick()
+        openTools()
         compose.onNodeWithTag("graph-bindings").performClick()
         bind("Trigger_1", "On Triggered", "Tracker_1", "Increment Progress")
         bind("Tracker_1", "On Complete", "Barrier_1", "Disable")
@@ -50,8 +54,6 @@ class GraphExperienceTest {
         compose.onNodeWithTag("graph-redo").performClick()
         compose.onNodeWithTag("logic-canvas").assert(hasStateDescription("3 devices, 2 bindings"))
         compose.onNodeWithTag("graph-save-button").performClick()
-        // TextButton merges its label into the button's semantics. Match that
-        // stable control rather than a child tag hidden in the merged tree.
         compose.waitUntil(10_000) {
             compose.onAllNodes(hasTestTag("graph-save-button") and hasText("Saved")).fetchSemanticsNodes().isNotEmpty()
         }
@@ -68,6 +70,7 @@ class GraphExperienceTest {
         compose.onNode(result).performClick()
         waitForGraph()
         compose.onNodeWithTag("logic-canvas").assert(hasStateDescription("3 devices, 2 bindings"))
+        openTools()
         compose.onNodeWithTag("graph-devices").performClick()
         compose.onNodeWithText("Placed").performClick()
         compose.onNodeWithText("Tracker_1").performClick()

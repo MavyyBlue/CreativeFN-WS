@@ -20,6 +20,7 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.semantics.contentDescription
@@ -36,6 +37,7 @@ import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import dev.creativelogic.mobile.uigraph.GraphWorkspaceViewModel
 import dev.creativelogic.mobile.uigraph.GraphEditorScreen
+import dev.creativelogic.mobile.blueprint.BlueprintAccess
 import dev.creativelogic.mobile.BuildConfig
 import dev.creativelogic.model.SavedMechanic
 import dev.creativelogic.model.MechanicMetadataV1
@@ -120,8 +122,10 @@ fun CreativeLogicApp(repository: MechanicRepository, preferences: DisplayPrefere
             RecentDrawer(documents, onOpen = openDocument, onClose = { keyboard?.hide(); scope.launch { drawer.close() } })
         }) {
         Scaffold(
+            // The former permanent corner FAB obstructed the editor; options now live in the header.
+            // When the header is hidden, keep a small recovery control so both bars can be restored.
             floatingActionButton = {
-                SmallFloatingActionButton(onClick = { keyboard?.hide(); displayOptions = true },
+                if (!showHeader) SmallFloatingActionButton(onClick = { keyboard?.hide(); displayOptions = true },
                     modifier = Modifier.semantics { contentDescription = "View options" }) {
                     BuilderGlyph(Glyph.Menu, MaterialTheme.colorScheme.onPrimaryContainer)
                 }
@@ -129,20 +133,26 @@ fun CreativeLogicApp(repository: MechanicRepository, preferences: DisplayPrefere
             topBar = {
                 if (showHeader) {
                     if (destination == Destination.Editor) EditorHeader(
-                    documents.find { it.mechanicMetadata.id == selectedId }?.mechanicMetadata?.name ?: "Your mechanic",
-                    onBack = { navigate(Destination.Home) },
-                    ) else BrandHeader()
+                        documents.find { it.mechanicMetadata.id == selectedId }?.mechanicMetadata?.name ?: "Your mechanic",
+                        onBack = { navigate(Destination.Home) }, onOptions = { displayOptions = true },
+                    ) else BrandHeader(onOptions = { displayOptions = true })
                 }
             },
             bottomBar = {
-                if (showNavigation) NavigationBar(containerColor = MaterialTheme.colorScheme.surfaceContainerLow) {
-                    Destination.entries.filter { it != Destination.Editor && it != Destination.Devices && (it != Destination.Recent || documents.isNotEmpty()) }.forEach { item ->
-                        NavigationBarItem(selected = if (item == Destination.Recent) drawer.isOpen else destination == item,
-                            onClick = { keyboard?.hide(); if (item == Destination.Recent) scope.launch { drawer.open() } else navigate(item) },
-                            icon = { BuilderGlyph(item.glyph, if (destination == item)
-                                MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant) },
-                            label = { Text(item.label) })
-                    }
+                // The graph editor owns all available space under its header.
+                if (showNavigation && destination != Destination.Editor) {
+                    WorkshopNavigation(
+                        destinations = Destination.entries.filter {
+                            it != Destination.Editor && it != Destination.Devices &&
+                                (it != Destination.Recent || documents.isNotEmpty())
+                        },
+                        selected = destination,
+                        recentOpen = drawer.isOpen,
+                        onChoose = { item ->
+                            keyboard?.hide()
+                            if (item == Destination.Recent) scope.launch { drawer.open() } else navigate(item)
+                        },
+                    )
                 }
             },
         ) { insets ->
@@ -156,7 +166,7 @@ fun CreativeLogicApp(repository: MechanicRepository, preferences: DisplayPrefere
                     when (screen) {
                         Destination.Home -> HomeScreen(openNew)
                         Destination.Recent -> HomeScreen(openNew)
-                        Destination.Library -> LibraryScreen(documents, openNew, openDocument)
+                        Destination.Library -> LibraryScreen(documents, repository, openNew, openDocument)
                         Destination.Learn -> LearnScreen { navigate(Destination.Devices) }
                         Destination.Devices -> DeviceReferenceScreen()
                         Destination.Editor -> GraphEditorScreen(documents.find { it.mechanicMetadata.id == selectedId }, workspace)
@@ -203,31 +213,67 @@ fun CreativeLogicApp(repository: MechanicRepository, preferences: DisplayPrefere
     }
 }
 
+/** Compact Cover Flow-inspired bar, no full-screen overlay or game integration. */
 @Composable
-private fun BrandHeader() {
-    Row(Modifier.fillMaxWidth().statusBarsPadding().padding(horizontal = 24.dp, vertical = 16.dp),
-        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-        Surface(shape = MaterialTheme.shapes.small, color = MaterialTheme.colorScheme.primaryContainer) {
-            BuilderGlyph(Glyph.Graph, MaterialTheme.colorScheme.primary, Modifier.padding(10.dp))
+private fun WorkshopNavigation(destinations: List<Destination>, selected: Destination, recentOpen: Boolean,
+    onChoose: (Destination) -> Unit) {
+    Surface(color = MaterialTheme.colorScheme.surfaceContainerLow, tonalElevation = 3.dp) {
+        Row(Modifier.fillMaxWidth().navigationBarsPadding().padding(horizontal = 8.dp, vertical = 5.dp),
+            horizontalArrangement = Arrangement.spacedBy(3.dp), verticalAlignment = Alignment.CenterVertically) {
+            destinations.forEachIndexed { index, item ->
+                val active = if (item == Destination.Recent) recentOpen else selected == item
+                Surface(onClick = { onChoose(item) }, modifier = Modifier.weight(1f).height(54.dp)
+                    .graphicsLayer {
+                        rotationY = if (active) 0f else if (index % 2 == 0) 9f else -9f
+                        scaleY = if (active) 1f else .89f
+                        cameraDistance = 14f * density
+                    }.testTag("navigation-${item.name.lowercase()}"),
+                    color = if (active) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerHigh,
+                    shape = MaterialTheme.shapes.small,
+                    tonalElevation = if (active) 6.dp else 1.dp) {
+                    Column(Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center) {
+                        BuilderGlyph(item.glyph, if (active) MaterialTheme.colorScheme.primary
+                            else MaterialTheme.colorScheme.onSurfaceVariant, Modifier.size(19.dp))
+                        Text(item.label, maxLines = 1, style = MaterialTheme.typography.labelSmall,
+                            color = if (active) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                }
+            }
         }
-        Column(Modifier.weight(1f)) {
-            Text("CREATIVE LOGIC", style = MaterialTheme.typography.titleMedium)
-        }
-        InformationButton("Creative Logic", "Plan device mechanics for Creative and rebuild them by hand. Your graphs stay on this device. These device settings are reference-only; simulation and the build overlay are not available yet.")
     }
 }
 
 @Composable
-private fun EditorHeader(name: String, onBack: () -> Unit) {
-    Row(Modifier.fillMaxWidth().statusBarsPadding().padding(horizontal = 12.dp, vertical = 12.dp),
+private fun BrandHeader(onOptions: () -> Unit) {
+    Row(Modifier.fillMaxWidth().statusBarsPadding().padding(start = 20.dp, end = 10.dp, top = 10.dp, bottom = 10.dp),
+        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        Surface(shape = MaterialTheme.shapes.small, color = MaterialTheme.colorScheme.primaryContainer) {
+            BuilderGlyph(Glyph.Graph, MaterialTheme.colorScheme.primary, Modifier.padding(10.dp))
+        }
+        Text("CREATIVE LOGIC", Modifier.weight(1f), style = MaterialTheme.typography.titleMedium)
+        InformationButton("Creative Logic", "Plan device mechanics for Creative and rebuild them by hand. Your graphs stay on this device. This workshop provides scoped value-based test actions, not a live Fortnite emulator.")
+        ViewOptionsButton(onOptions)
+    }
+}
+
+@Composable
+private fun ViewOptionsButton(onClick: () -> Unit) {
+    IconButton(onClick = onClick, modifier = Modifier.semantics { contentDescription = "View options" }) {
+        BuilderGlyph(Glyph.Menu, MaterialTheme.colorScheme.onSurface)
+    }
+}
+
+@Composable
+private fun EditorHeader(name: String, onBack: () -> Unit, onOptions: () -> Unit) {
+    Row(Modifier.fillMaxWidth().statusBarsPadding().padding(start = 6.dp, end = 8.dp, top = 8.dp, bottom = 8.dp),
         verticalAlignment = Alignment.CenterVertically) {
         IconButton(onClick = onBack, modifier = Modifier.semantics { contentDescription = "Back to home" }) {
             BuilderGlyph(Glyph.Back, MaterialTheme.colorScheme.onSurface)
         }
-        Column(Modifier.weight(1f).padding(horizontal = 8.dp)) {
-            Text(name, modifier = Modifier.testTag("editor-title"), style = MaterialTheme.typography.titleMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
-        }
-        InformationButton("Saved mechanic", "This mechanic is saved on this device. Edit its devices and bindings in the canvas. Your graph saves automatically after changes.")
+        Text(name, modifier = Modifier.weight(1f).padding(start = 4.dp).testTag("editor-title"),
+            style = MaterialTheme.typography.titleMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        ViewOptionsButton(onOptions)
     }
 }
 
@@ -243,15 +289,13 @@ private fun HomeScreen(onNew: () -> Unit) {
 }
 
 @Composable
-private fun LibraryScreen(documents: List<SavedMechanic>, onNew: () -> Unit, onOpen: (SavedMechanic) -> Unit) {
+private fun LibraryScreen(documents: List<SavedMechanic>, repository: MechanicRepository, onNew: () -> Unit, onOpen: (SavedMechanic) -> Unit) {
     val keyboard = LocalSoftwareKeyboardController.current
     var query by rememberSaveable { mutableStateOf("") }
     val matching = remember(documents, query) { documents.filter { it.mechanicMetadata.name.contains(query.trim(), ignoreCase = true) } }
-    LazyColumn(Modifier.testTag("mechanic-library").widthIn(max = 760.dp).fillMaxSize(), contentPadding = PaddingValues(24.dp, 24.dp, 24.dp, 96.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)) {
-        item {
-            Text("Your mechanics", style = MaterialTheme.typography.headlineMedium)
-        }
+    LazyColumn(Modifier.testTag("mechanic-library").widthIn(max = 760.dp).fillMaxSize(),
+        contentPadding = PaddingValues(24.dp, 24.dp, 24.dp, 96.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        item { Text("Your mechanics", style = MaterialTheme.typography.headlineMedium) }
         item {
             OutlinedTextField(value = query, onValueChange = { query = it }, modifier = Modifier.fillMaxWidth(),
                 label = { Text("Search mechanics") }, singleLine = true,
@@ -265,6 +309,8 @@ private fun LibraryScreen(documents: List<SavedMechanic>, onNew: () -> Unit, onO
                 Spacer(Modifier.width(8.dp)); Text("New Mechanic")
             }
         }
+        // Blueprint entrypoint is now part of the Library, rather than a permanent global FAB.
+        item(key = "blueprints") { BlueprintAccess(repository, Modifier.fillMaxWidth().testTag("library-blueprints")) }
         if (matching.isEmpty()) item {
             EmptyState(if (query.isBlank()) "Your library starts here" else "No matching mechanics",
                 if (query.isBlank()) "Create a named draft for your next Creative idea." else "Try a different name or clear your search.", Glyph.Library)

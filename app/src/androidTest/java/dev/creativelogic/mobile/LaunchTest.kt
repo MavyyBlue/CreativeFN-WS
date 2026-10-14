@@ -1,20 +1,7 @@
 package dev.creativelogic.mobile
 
-import androidx.compose.ui.test.assertTextEquals
-import androidx.compose.ui.test.hasAnyAncestor
-import androidx.compose.ui.test.hasTestTag
-import androidx.compose.ui.test.assertIsDisplayed
-import androidx.compose.ui.test.assertIsNotEnabled
-import androidx.compose.ui.test.hasSetTextAction
-import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
-import androidx.compose.ui.test.onNodeWithTag
-import androidx.compose.ui.test.onNodeWithText
-import androidx.compose.ui.test.onNodeWithContentDescription
-import androidx.compose.ui.test.performImeAction
-import androidx.compose.ui.test.performScrollToNode
-import androidx.compose.ui.test.performClick
-import androidx.compose.ui.test.performTextInput
 import org.junit.Rule
 import org.junit.Test
 import java.util.UUID
@@ -37,9 +24,9 @@ class LaunchTest {
         compose.onNodeWithText("Mechanic name").performTextInput(draftName)
         compose.onNodeWithText("Create draft").performClick()
         compose.waitUntil(timeoutMillis = 10_000) {
-            compose.onAllNodes(hasText("Logic canvas")).fetchSemanticsNodes().isNotEmpty()
+            compose.onAllNodes(hasTestTag("graph-tools-toggle")).fetchSemanticsNodes().isNotEmpty()
         }
-        compose.onNodeWithText("Logic canvas").assertIsDisplayed()
+        compose.onNodeWithTag("graph-tools-toggle").assertIsDisplayed()
         compose.onNodeWithTag("editor-title").assertTextEquals(draftName).assertIsDisplayed()
         compose.onNodeWithContentDescription("Back to home").performClick()
         compose.onNodeWithText("Library").performClick()
@@ -49,7 +36,7 @@ class LaunchTest {
             hasAnyAncestor(hasTestTag("mechanic-library"))
         compose.onNodeWithTag("mechanic-library").performScrollToNode(resultCard)
         compose.onNode(resultCard).assertIsDisplayed().performClick()
-        compose.onNodeWithText("Logic canvas").assertIsDisplayed()
+        compose.onNodeWithTag("graph-tools-toggle").assertIsDisplayed()
         compose.onNodeWithTag("editor-title").assertTextEquals(draftName).assertIsDisplayed()
     }
 

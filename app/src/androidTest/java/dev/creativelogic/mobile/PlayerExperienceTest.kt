@@ -43,7 +43,7 @@ class PlayerExperienceTest {
         compose.onNodeWithText("New Mechanic").performClick()
         compose.onNodeWithText("Mechanic name").performTextInput(name)
         compose.onNodeWithText("Create draft").performClick()
-        compose.waitUntil(10_000) { compose.onAllNodes(hasText("Logic canvas")).fetchSemanticsNodes().isNotEmpty() }
+        compose.waitUntil(10_000) { compose.onAllNodes(hasTestTag("graph-tools-toggle")).fetchSemanticsNodes().isNotEmpty() }
         compose.onNodeWithContentDescription("Back to home").performClick()
         compose.waitUntil(10_000) { compose.onAllNodes(hasText("Recent")).fetchSemanticsNodes().isNotEmpty() }
         compose.onNodeWithText("Recent").performClick()
@@ -53,7 +53,7 @@ class PlayerExperienceTest {
             hasAnyAncestor(hasTestTag("recent-mechanics"))
         compose.onNodeWithTag("recent-mechanics").performScrollToNode(result)
         compose.onNode(result).performClick()
-        compose.onNodeWithText("Logic canvas").assertIsDisplayed()
+        compose.onNodeWithTag("graph-tools-toggle").assertIsDisplayed()
         compose.onNodeWithText("Recent mechanics").assertIsNotDisplayed()
     }
 

@@ -1,13 +1,22 @@
+## 2026-10-13 — Full-height builder workspace (new source candidate)
+
+- Starting from owner-accepted commit `a6384c23e3a1cc1725688baa42e792444b5ff8ce` / Android green run [38490221585](https://github.com/MavyyBlue/CreativeFN-WS/actions/runs/38490221585). This source package has **no new Android CI certification** yet.
+- Remove Editor bottom nav and stacked Graph control rows; canvas fills from the app header to the system content boundary.
+- Add a fixed upper-left, collapsing Tools fan (Devices/Bindings/Fit/Simulate; Design return in simulation); keep Undo/Redo/Save and Check on a compact fixed right rail.
+- Replace full-width stock NavigationBar with a compact Cover Flow-inspired four-card navigation; retain per-user show/hide preference and explicit View options recovery when header hidden.
+- Move Blueprints into Library immediately after New Mechanic. Preserve import/export, guides, progress, permissions and foreground overlay service unchanged.
+- Update Compose instrumentation source to exercise changed access paths and layout, with no changes to Room, ports, simulation logic, event ordering, saved formats, overlay or build/signing settings.
+
 # Changelog — CreativeFN WS
 
-## 2026-10-13 — Phase 5.1 mechanic health check (SOURCE CANDIDATE; NOT CI/PHONE CERTIFIED)
+## 2026-10-13 — Phase 5.1 mechanic health check (subsequently certified at a6384c23)
 
 - Verified live main SHA `9a05ebbd84f1b17bca8fe454ec25bff02e3ffd35` as the owner-accepted Android baseline ([run 38474555365](https://github.com/MavyyBlue/CreativeFN-WS/actions/runs/38474555365); both `build` and `launch-smoke` green).
 - Added a read-only, Android-free graph diagnostics engine with stable severity/codes, friendly explanation and suggested corrective actions: invalid/missing settings, unknown/duplicated ports and links, disconnected endpoints, blank HUD messages, disabled Trigger/Button inputs, unassigned Tracker, limited prototype settings and feedback-loop warnings.
 - Added in-editor **Check mechanic** summary/inspect/Open device workflow; shared warnings now appear in the generated blueprint. No data or simulator state is modified by inspection.
 - Added pure-JVM regression tests for valid/corrupted graphs, repeated bindings vs fan-out, cycles, dormant devices, tracker limitations, blueprint integration and larger acyclic graphs.
 - Kept the existing eight-device catalog, Room schema 1, version-2 wire formats, overlay UI/service, fixed signing, Android permissions, Lint policy and Gradle dependencies untouched.
-- Android CI and real phone acceptance of this new source remain pending; standalone local checks are not Android certification.
+- Initially pending, this diagnostic slice subsequently passed Android `build` and `launch-smoke` on `a6384c23` (run `38490221585`), and the owner reports a successful phone acceptance.
 
 ## 2026-10-13 — Inline expanded device-node baseline (CERTIFIED)
 

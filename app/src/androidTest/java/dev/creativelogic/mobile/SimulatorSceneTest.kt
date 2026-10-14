@@ -17,9 +17,11 @@ class SimulatorSceneTest {
         compose.waitUntil(10_000) {
             compose.onAllNodes(hasTestTag("logic-canvas")).fetchSemanticsNodes().isNotEmpty()
         }
+        compose.onNodeWithTag("graph-tools-toggle").performClick()
         compose.onNodeWithTag("graph-devices").performClick()
         compose.onNodeWithText("Button").performClick()
         compose.onNodeWithTag("logic-canvas").assert(hasStateDescription("1 devices, 0 bindings"))
+        compose.onNodeWithTag("graph-tools-toggle").performClick()
         compose.onNodeWithTag("graph-simulation-toggle").performClick()
         compose.onNodeWithText("TEST SCENE · Not Fortnite-verified").assertIsDisplayed()
         compose.onNodeWithTag("sim-actions-toggle").performClick()
@@ -30,6 +32,7 @@ class SimulatorSceneTest {
         compose.onNodeWithText("Button_1: enabled · 1 presses").assertIsDisplayed()
         compose.onNodeWithTag("sim-reset").performClick()
         compose.onNodeWithTag("graph-simulation-toggle").performClick()
+        compose.onNodeWithTag("graph-tools-toggle").performClick()
         compose.onNodeWithTag("graph-devices").assertIsDisplayed()
         compose.onNodeWithTag("logic-canvas").assert(hasStateDescription("1 devices, 0 bindings"))
     }

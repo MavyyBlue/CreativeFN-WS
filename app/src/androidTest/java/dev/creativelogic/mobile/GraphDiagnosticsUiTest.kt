@@ -6,7 +6,7 @@ import org.junit.Rule
 import org.junit.Test
 import java.util.UUID
 
-/** Verifies the new health check is reachable without disrupting ordinary graph editing. */
+/** Phase 5.1 health-check must remain reachable after consolidating graph tools. */
 class GraphDiagnosticsUiTest {
     @get:Rule val compose = createAndroidComposeRule<MainActivity>()
 
@@ -15,14 +15,16 @@ class GraphDiagnosticsUiTest {
         compose.onNodeWithText("Mechanic name").performTextInput("Diagnostics ${UUID.randomUUID().toString().take(8)}")
         compose.onNodeWithText("Create draft").performClick()
         compose.waitUntil(10_000) {
-            compose.onAllNodes(hasTestTag("graph-devices")).fetchSemanticsNodes().isNotEmpty()
+            compose.onAllNodes(hasTestTag("graph-tools-toggle")).fetchSemanticsNodes().isNotEmpty()
         }
+        compose.onNodeWithTag("graph-tools-toggle").performClick()
         compose.onNodeWithTag("graph-devices").performClick()
         compose.onNodeWithText("HUD Message").performClick()
         compose.onNodeWithTag("graph-health-check").performClick()
         compose.onNodeWithText("Mechanic health check").assertIsDisplayed()
         compose.onNodeWithText("0 errors · 0 warnings · local checks only").assertIsDisplayed()
         compose.onNodeWithText("Close").performClick()
+        compose.onNodeWithTag("graph-tools-toggle").performClick()
         compose.onNodeWithTag("graph-devices").performClick()
         compose.onNodeWithText("Placed").performClick()
         compose.onNodeWithText("HUD Message_1").performClick()

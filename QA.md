@@ -1,6 +1,15 @@
+## Editor/navigation declutter acceptance (new candidate)
+
+Certified predecessor `a6384c23e3a1cc1725688baa42e792444b5ff8ce` passed Android CI [38490221585](https://github.com/MavyyBlue/CreativeFN-WS/actions/runs/38490221585) and owner diagnostics acceptance. **This UI source requires a separate Android build, strict Lint, emulator smoke and phone acceptance.**
+
+- New source tests: `GraphLayoutUiTest` (collapsed Tools / Save / Check / simulation return; Library-only Blueprints), updates to `GraphExperienceTest`, `GraphDiagnosticsUiTest`, `SimulatorSceneTest`, `LaunchTest`, and `PlayerExperienceTest` for changed controls. Source tests are NOT execution evidence.
+- Manually inspect portrait/landscape with minimum supported Android size/font scaling; tap all four fan options; verify full-height canvas remains pannable/zoomable outside controls and no unexpected invisible hit areas; repeat with keyboard visible.
+- Verify hide/restore navigation and header, device creation/editing, Event → Function connections, Undo/Redo, save/reopen, diagnostics dialog and repairing a device, simulator enter/exit and trace/actions, search/recent, Guide, checklist, import/export, and overlay launch.
+- After CI green, compare signing certificate with installed build, then check the already accepted floating Fortnite overlay separately, including pinch/scroll and pass-through.
+
 # Quality assurance — CreativeFN WS
 
-The accepted Android baseline is `9a05ebbd84f1b17bca8fe454ec25bff02e3ffd35`, [Actions run 38474555365](https://github.com/MavyyBlue/CreativeFN-WS/actions/runs/38474555365) (**build** and **launch-smoke** green), installed and phone-accepted above Fortnite for Cover Flow and inline expandable graph cards. Earlier documentation that said these features were still candidates is superseded. A new Phase 5.1 diagnostics source candidate has **no new CI/phone acceptance** yet.
+The accepted Android baseline is `9a05ebbd84f1b17bca8fe454ec25bff02e3ffd35`, [Actions run 38474555365](https://github.com/MavyyBlue/CreativeFN-WS/actions/runs/38474555365) (**build** and **launch-smoke** green), installed and phone-accepted above Fortnite for Cover Flow and inline expandable graph cards. Earlier documentation that said these features were still candidates is superseded. Phase 5.1 later passed Android CI run `38490221585` on `a6384c23` and was phone-accepted by the owner. The current UI candidate is separately pending.
 
 ## Automated regression matrix
 
@@ -12,7 +21,7 @@ The accepted Android baseline is `9a05ebbd84f1b17bca8fe454ec25bff02e3ffd35`, [Ac
 - Android instrumentation: Room durability, editor interactions and saved content, blueprint graph render, inline expanded-card bitmap render, overlay navigation; lintDebug must be green with warnings-as-errors and no broad suppression.
 - Importer: Python integrity/path/required-file tests; verified SHA-256 for all package entries, no `.github`, `.git`, keystore, generated binaries, symlinks or path traversal; exact source-import contract retained.
 
-## New Phase 5.1 phone checks after green CI
+## Phase 5.1 phone regression checks (already accepted on predecessor)
 
 1. Create Button → HUD Message, open **Check mechanic**. Expect zero errors/warnings, plus a general sandbox-fidelity information notice. No configuration changes or toast interruption on ordinary pan/zoom.
 2. Clear the HUD text. Verify `BLANK_MESSAGE` explains why, offers a fix, and **Open device** opens the correct settings sheet. Restore text and confirm warning disappears.

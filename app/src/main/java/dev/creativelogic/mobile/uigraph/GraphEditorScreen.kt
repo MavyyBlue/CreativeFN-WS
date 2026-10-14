@@ -9,7 +9,6 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
@@ -18,7 +17,6 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.creativelogic.catalog.InitialDeviceCatalog
 import dev.creativelogic.graph.*
-import dev.creativelogic.mobile.ui.InformationButton
 import dev.creativelogic.mobile.uisimulator.PrototypeSimulatorOverlay
 import dev.creativelogic.model.*
 import kotlinx.coroutines.launch
@@ -48,6 +46,7 @@ private fun GraphEditorContent(session: GraphDraftSession) {
     var event by rememberSaveable { mutableStateOf<String?>(null) }
     var canvasSize by remember { mutableStateOf(Size.Zero) }
     var showDiagnostics by rememberSaveable { mutableStateOf(false) }
+    var toolsExpanded by rememberSaveable { mutableStateOf(false) }
     val diagnostics = remember(graph.devices, graph.connections) { GraphDiagnostics.inspect(graph, InitialDeviceCatalog.catalog) }
     // Capture a fixed configuration when entering the test scene; no runtime data is stored.
     var simulatorGraph by remember { mutableStateOf<MechanicGraph?>(null) }
@@ -71,56 +70,90 @@ private fun GraphEditorContent(session: GraphDraftSession) {
         selected = null
     }
     LaunchedEffect(graph.devices) { if (graph.devices.none { it.id == source }) { source = null; event = null } }
-    Column(Modifier.fillMaxSize().padding(8.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(if (simulatorGraph == null) "Logic canvas" else "Prototype scene", Modifier.weight(1f), style = MaterialTheme.typography.titleMedium)
-            TextButton(onClick = {
+    // The graph is full-bleed beneath the app header. Floating controls do not consume
+    // layout height or alter saved device coordinates / viewport persistence.
+    Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.surfaceContainerLow)
+        .onSizeChanged { canvasSize = Size(it.width.toFloat(), it.height.toFloat()) }) {
+        if (simulatorGraph == null) {
+            LogicCanvas(graph, source, { selected = it; toolsExpanded = false }, { context = it; toolsExpanded = false },
+                ::selectEvent, ::connect,
+                { id, x, y -> change { session.editor.move(id, x, y) } },
+                { session.editor.viewport(it); session.markDirty() })
+        } else {
+            LogicCanvas(graph, null, { }, { }, { _, _ -> }, { _, _ -> },
+                { _, _, _ -> }, { session.editor.viewport(it); session.markDirty() }, readOnly = true)
+            PrototypeSimulatorOverlay(simulatorGraph!!)
+        }
+        // A compact dial opens into a fan; choosing anything closes it again.
+        GraphToolDial(
+            expanded = toolsExpanded, inSimulation = simulatorGraph != null,
+            canFit = graph.devices.isNotEmpty(),
+            onToggle = { toolsExpanded = !toolsExpanded },
+            onDevices = { toolsExpanded = false; palette = true },
+            onBindings = { toolsExpanded = false; bindings = true },
+            onFit = { toolsExpanded = false; fit() },
+            onSimulation = {
+                toolsExpanded = false
                 simulatorGraph = if (simulatorGraph == null) graph.copy() else null
-                palette = false; bindings = false; selected = null; context = null; source = null; event = null
-            }, modifier = Modifier.testTag("graph-simulation-toggle")) { Text(if (simulatorGraph == null) "Simulate" else "Design") }
-            InformationButton("Logic canvas", "Design: drag to place, pan/pinch to navigate, tap to configure and connect ports. Simulate: test an isolated snapshot with external actions, Step/Run and a collapsible output. The sandbox is NOT yet verified 1:1 with Fortnite.")
-        }
-        if (simulatorGraph == null) Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            TextButton(onClick = { palette = true }, modifier = Modifier.testTag("graph-devices")) { Text("Devices") }
-            TextButton(onClick = { bindings = true }, modifier = Modifier.testTag("graph-bindings")) { Text("Bindings") }
-            TextButton(onClick = { scope.launch { session.saveLatest() } }, modifier = Modifier.testTag("graph-save-button")) {
-                Text(when (status) { GraphSaveStatus.SAVED -> "Saved"; GraphSaveStatus.SAVING -> "Saving…"; else -> "Save" })
+                palette = false; bindings = false; selected = null
+                context = null; source = null; event = null
+            },
+            modifier = Modifier.align(Alignment.TopStart)
+                .then(if (simulatorGraph != null) Modifier.padding(top = 112.dp) else Modifier),
+        )
+        if (simulatorGraph == null) {
+            Column(Modifier.align(Alignment.TopEnd).padding(8.dp),
+                verticalArrangement = Arrangement.spacedBy(6.dp),
+                horizontalAlignment = Alignment.End) {
+                FilledTonalButton(onClick = { scope.launch { session.saveLatest() } },
+                    modifier = Modifier.testTag("graph-save-button").heightIn(min = 40.dp),
+                    contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp)) {
+                    Text(when (status) {
+                        GraphSaveStatus.SAVED -> "Saved"
+                        GraphSaveStatus.SAVING -> "Saving…"
+                        else -> "Save"
+                    }, style = MaterialTheme.typography.labelSmall)
+                }
+                FilledTonalButton(onClick = { change { session.editor.undo() } },
+                    enabled = session.editor.canUndo, modifier = Modifier.testTag("graph-undo").heightIn(min = 40.dp),
+                    contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp)) {
+                    Text("Undo", style = MaterialTheme.typography.labelSmall)
+                }
+                FilledTonalButton(onClick = { change { session.editor.redo() } },
+                    enabled = session.editor.canRedo, modifier = Modifier.testTag("graph-redo").heightIn(min = 40.dp),
+                    contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp)) {
+                    Text("Redo", style = MaterialTheme.typography.labelSmall)
+                }
+                FilledTonalButton(onClick = { toolsExpanded = false; showDiagnostics = true },
+                    modifier = Modifier.testTag("graph-health-check").heightIn(min = 40.dp),
+                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)) {
+                    Text(when {
+                        diagnostics.errors > 0 -> "Check !${diagnostics.errors}"
+                        diagnostics.warnings > 0 -> "Check ${diagnostics.warnings}"
+                        else -> "Check"
+                    }, style = MaterialTheme.typography.labelSmall,
+                        color = if (diagnostics.errors > 0) MaterialTheme.colorScheme.error
+                            else MaterialTheme.colorScheme.onSecondaryContainer)
+                }
             }
         }
-        if (simulatorGraph == null) Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            TextButton(onClick = { change { session.editor.undo() } }, enabled = session.editor.canUndo, modifier = Modifier.testTag("graph-undo")) { Text("Undo") }
-            TextButton(onClick = { change { session.editor.redo() } }, enabled = session.editor.canRedo, modifier = Modifier.testTag("graph-redo")) { Text("Redo") }
-            TextButton(onClick = { fit() }, enabled = graph.devices.isNotEmpty()) { Text("Fit") }
-        }
-        // Passive status, no popups during editing. Tapping opens concrete fixes on demand.
-        if (simulatorGraph == null) TextButton(onClick = { showDiagnostics = true },
-            modifier = Modifier.fillMaxWidth().testTag("graph-health-check")) {
-            val label = when {
-                diagnostics.errors > 0 -> "Check mechanic · ${diagnostics.errors} error(s), ${diagnostics.warnings} warning(s)"
-                diagnostics.warnings > 0 -> "Check mechanic · ${diagnostics.warnings} warning(s)"
-                else -> "Check mechanic · No configuration errors"
-            }
-            Text(label, color = if (diagnostics.errors > 0) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.secondary,
-                style = MaterialTheme.typography.labelMedium)
-        }
-        if (status == GraphSaveStatus.FAILED) Text("Couldn’t save. Tap Save to retry.", color = MaterialTheme.colorScheme.error)
-        if (source != null) Row(verticalAlignment = Alignment.CenterVertically) {
-            Text("Event selected → choose a function", Modifier.weight(1f), style = MaterialTheme.typography.bodySmall)
-            TextButton(onClick = { source = null; event = null }) { Text("Cancel") }
-        }
-        Box(Modifier.fillMaxWidth().weight(1f).clip(MaterialTheme.shapes.large).background(MaterialTheme.colorScheme.surfaceContainerLow)
-            .onSizeChanged { canvasSize = Size(it.width.toFloat(), it.height.toFloat()) }) {
-            if (simulatorGraph == null) {
-                LogicCanvas(graph, source, { selected = it }, { context = it }, ::selectEvent, ::connect,
-                    { id, x, y -> change { session.editor.move(id, x, y) } }, { session.editor.viewport(it); session.markDirty() })
-            } else {
-                // Viewport remains navigable. Moving/configuring devices is locked while testing.
-                LogicCanvas(graph, null, { }, { }, { _, _ -> }, { _, _ -> },
-                    { _, _, _ -> }, { session.editor.viewport(it); session.markDirty() }, readOnly = true)
-                PrototypeSimulatorOverlay(simulatorGraph!!)
+        if (status == GraphSaveStatus.FAILED && simulatorGraph == null) {
+            Surface(Modifier.align(Alignment.BottomCenter).padding(bottom = 64.dp),
+                color = MaterialTheme.colorScheme.errorContainer, shape = MaterialTheme.shapes.small) {
+                Text("Couldn't save. Tap Save to retry.", Modifier.padding(9.dp),
+                    style = MaterialTheme.typography.labelSmall)
             }
         }
-        SnackbarHost(snackbars)
+        if (source != null && simulatorGraph == null) {
+            Surface(Modifier.align(Alignment.BottomCenter).padding(bottom = 12.dp, start = 12.dp, end = 12.dp),
+                shape = MaterialTheme.shapes.small, tonalElevation = 5.dp) {
+                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(start = 10.dp)) {
+                    Text("Event selected → choose a function", style = MaterialTheme.typography.labelSmall)
+                    TextButton(onClick = { source = null; event = null }) { Text("Cancel") }
+                }
+            }
+        }
+        SnackbarHost(snackbars, modifier = Modifier.align(Alignment.BottomCenter))
     }
     if (showDiagnostics) AlertDialog(onDismissRequest = { showDiagnostics = false },
         title = { Text("Mechanic health check") },
