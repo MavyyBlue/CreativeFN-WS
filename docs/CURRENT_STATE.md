@@ -1,71 +1,27 @@
-# Current state — blueprint and Android overlay source candidate, 2026-10-13
+# Current state — CreativeFN WS (2026-10-13)
 
-## Authoritative prior certified baseline
+## Latest certified Android + phone baseline
 
-`main` commit `1bcc006427d8bbdc88a926119f49c9f76398d316` successfully completed GitHub Actions Android run [38338236226](https://github.com/MavyyBlue/CreativeFN-WS/actions/runs/38338236226), including `build` and `launch-smoke`. The owner installed and accepted the Phase 3.2 simulator on an actual Android phone. Existing Room schema 1, device IDs, graph document format 2, catalog version 0.2.0-draft and fixed signing infrastructure remain intact.
+GitHub `main` was inspected at **`9a05ebbd84f1b17bca8fe454ec25bff02e3ffd35`**. GitHub Actions Android run [38474555365](https://github.com/MavyyBlue/CreativeFN-WS/actions/runs/38474555365) passed both `build` and `launch-smoke`. The owner installed the corresponding APK and confirmed on an actual Android phone, over Fortnite, that the compact Cover Flow navigator and **inline expanding, scrollable graph nodes** work. This supersedes earlier candidate/pending descriptions throughout repository history.
 
-## New, NOT YET CERTIFIED source candidate
+The working base includes eight reference devices, Room schema 1, graph document format 2, `.c1logic` exchange, deterministic Phase 3.2 prototype testing, saved blueprints/checklists, named folders, one-hop Connection Focus, an Android foreground-service overlay, and orientation-specific panel geometry. The device catalog is `0.2.0-draft`. Simulation remains limited and **not Fortnite 1:1 certified**. Do not infer new certification for modified code from the baseline run.
 
-- Adds `BlueprintGenerator` as a pure JVM read-only generator: devices and counts, per-device saved options, direct Event → Function labels, steps, warnings, and game-fidelity caveats. Pure JVM unit tests cover source integrity, bindings and empty graphs.
-- Adds an in-app Blueprints access point to existing searchable mechanics, a full-screen construction guide with saved checklist progress and user-started overlay entrypoint.
-- Adds local `.c1logic` export/import via the Android Storage Access Framework. Imports get new mechanic IDs and do not overwrite existing documents. Format is existing `MechanicGraphCodec` version 2 JSON; old catalog 0.1.0-draft documents remain migrated by existing decoder. Imported input limit 2 MB; no file/storage/network permissions.
-- Adds Android `TYPE_APPLICATION_OVERLAY` with a nonexported special-use foreground service; permission obtained only by choosing Overlay. Notification offers Stop. Bubble can drag, expand/collapse; Steps/Devices/Links/Graph tabs share snapshot from the same saved document; graph has touch zoom/pan. Positions/checklist/current step persisted; no background simulation or polling.
-- Existing editor, Room schema, `.c1logic` wire, catalog and deterministic simulator are not replaced.
+## New Phase 5.1 source candidate — diagnostic health check
 
-## Evidence and unverified boundaries
+This source package adds a read-only `GraphDiagnostics` pass that examines the graph without changing it. It provides stable codes, error/warning/info severity, explanation, concrete repair advice and relevant device IDs. It flags missing or invalid options, unknown device/option/ports, missing link endpoints, duplicate link identities/meanings, blank HUD messages, dormant Button/Trigger devices, unassigned Tracker progress, Tracker target zero, unsupported sandbox Tracker sharing/HUD and Barrier phase modes, and possible event feedback loops. A single scope notice explains that game-fidelity has not been verified.
 
-The above is **source-only** work requiring an importer validation, real Gradle Android build/lint/instrumentation, and actual phone + Fortnite overlay acceptance. This document intentionally does not assert success of any of those new gates. The development environment used to prepare the package cannot run the Android SDK build; check GitHub Actions after mobile upload. A functioning Android overlay cannot be inferred from passing JVM tests alone, and Fortnite or OEM policies can suppress third-party overlays.
+The Android graph editor receives a compact nonintrusive **Check mechanic** indicator. Tap to see findings and tap **Open device** to change the relevant saved configuration. Generated construction guides also carry actionable warning/error messages so builders see the same problems during rebuild. A new pure-JVM regression suite covers healthy/corrupted graphs, fanout, cycles, dormant devices, tracker issues, simulator limitations, guide propagation and long acyclic graphs.
 
-Check install signing identity before replacing the working APK. Do not regenerate secrets or require an uninstall by default. New code has permissions limited to overlay and foreground service and does not access the game.
+The entire slice preserves Room/database version, graph/JSON formats, device IDs, catalog definitions, simulation execution, overlay code, UI navigation, Android manifest/permissions, build dependencies and signing infrastructure. This package does **not** expand the catalog or claim to verify Fortnite behavior.
 
-## Lint repair after first blueprint CI (2026-10-13)
+## Source-only validation and pending certification
 
-The importer successfully expanded the first blueprint package into commit
-`4db801a378b91ff05d3d62825fe8f50d0446fc68`. Android [run 38433588379](https://github.com/MavyyBlue/CreativeFN-WS/actions/runs/38433588379)
-compiled the source and passed all 45 JVM/unit tests (1 app, 4 core-model, 8 device-catalog,
-16 graph-engine including 2 blueprint tests, and 16 simulation-engine). It failed
-at `:app:lintDebug` with nine findings in the newly introduced Android overlay and
-blueprint entrypoint; `launch-smoke` was skipped. **That run was red, not certified.**
+The repository is not locally cloned because outbound GitHub access is unavailable in the build container. Live source was audited through the connected GitHub repository API. A targeted standalone `kotlinc` harness may compile the new diagnostics against structurally equivalent model stubs, but does not substitute for a Gradle multi-module build or Android Lint. The source-import manifest and checksum validation run locally against `scripts/mobile_delivery.py` before handoff.
 
-The follow-up ZIP changes only the reported lint issues: six KTX replacements
-(SharedPreferences edit, URI parse and color parse), KTX-managed canvas transform,
-a reused graph-node `RectF`, and the programmatic View's standard Context
-constructor. Node lookup is also prepared outside `onDraw`, and device label
-substrings are drawn without allocating temporary strings. Strict lint remains
-enabled and signing, manifest permissions, Room schema, simulation rules and
-catalog definitions are unchanged. This is a **new, unverified CI candidate**;
-Android build/lint/emulator and physical Fortnite overlay acceptance remain open.
+**Not yet certified:** uploaded ZIP import, Android build, strict `lintDebug`, JVM tests in GitHub CI, emulator `launch-smoke`, signing-certificate continuity, and owner phone acceptance of the new editor control. Those gates must be checked after import on a new expanded commit. The above green run certifies **only** the preexisting baseline.
 
-## Post-install owner test: Fortnite overlay confirmed; usability defects found (2026-10-13)
+## Known boundaries and next work
 
-Follow-up source import commit `6efa6717592b4e0bf63a87bcc2f958b005baa3a8` has successful Android CI [38435563960](https://github.com/MavyyBlue/CreativeFN-WS/actions/runs/38435563960). Owner installed the APK and provided screenshots of the expanded real Android overlay above Fortnite in landscape: FN bubble was present; Steps, Devices and Links tabs worked. Owner reported an empty Graph tab and an oversized panel obstructing gameplay. This **does not** certify the full blueprint experience yet.
+The prototype only accepts Tracker `sharing=All`, `showOnHud=Off`, `targetValue>=1` and Barrier `enabledDuringPhase=Always/None`, even though the editor can configure other documented choices. The health check informs rather than silently normalizes these. An event-cycle warning is conservative, not proof that a loop will occur; actual event depth, action and queue caps are unchanged. Native Fortnite physics, real multiplayer, HUD and world effects require actual Creative island verification.
 
-The next source-only candidate provides a compact quarter-screen landscape default, adjustable width and height, orientation-specific saved positions/sizes, a Tabs hide/show control, and a refitted graph with a visible device count and Fit graph button. Android render and pure Kotlin sizing regression tests are included. No backend or schema changes. CI, emulator graphic test and a repeat Fortnite phone check of this new candidate are pending; previous green evidence applies only to `6efa671`.
-
-## Follow-up: interactive Links directory and Connection Focus (candidate, 2026-10-13)
-
-Live GitHub `main` inspected at `ac754adfd1b44b5b6bc34413e109fa3af664d7d8`; the owner has now confirmed that the compact Graph view renders two device nodes and one wire above Fortnite in landscape, including adjustable window sizing. These are user-observed phone results, not new GitHub CI evidence for this candidate.
-
-The new patch includes a 3-tab overlay (Steps/Links/Graph), per-node option and direct binding inspector, one-hop visual long-press focus cleared by a blank-space double-tap, grouped device explorer with named folders, folder rename/ungroup, and portable v1 folder metadata as an optional field of the existing format-2 mechanic JSON. Existing Room schema, simulator, catalog, Android permissions and signing workflows are unchanged. Graph editor saves merge latest folder metadata to avoid accidentally deleting groups after returning from Fortnite. Regression tests cover adjacency non-transitivity and folder round-trip/validation. The compact baseline at `ac754adf` passed Android CI run `38441055829` and its overlay graph was observed working in Fortnite. GitHub Android build/lint/emulator and physical-device gesture/keyboard acceptance are still required for this **new** source candidate.
-
-## Cover Flow source follow-up — 2026-10-13
-
-GitHub Actions Android [38458909239](https://github.com/MavyyBlue/CreativeFN-WS/actions/runs/38458909239) passed at source SHA `363dde7c0dc512f4454589a0feab4b4ad4eb8451`. The owner shared a Fortnite screenshot proving the current three-view compact overlay and node inspector actually appear above the game. The next candidate changes only the overlay layout plus pure-Kotlin geometry/navigation code and docs/tests: a separate bounded transparent Cover Flow navigator below the main panel, full-bleed Graph/Steps/Links content, contextual control menu, persisted active tab, and a non-shrinking graph inspector. The navigator is hidden on collapse/stop and follows drag/resize/orientation; main panel height is capped to reserve screen space below it.
-
-This follow-up source is **NOT CI certified or phone accepted**. It requires the importer, Android Gradle/Lint, connected emulator checks, and direct in-game tests of both overlay windows and outside-touch pass-through. No changes to Room format or schema, source device identifiers, signer, CI workflow, simulation logic or Epic fidelity boundaries.
-
-## Cover Flow accessibility fix candidate — 2026-10-13
-
-The Cover Flow source was imported successfully as `890c6ff4ba2b09ff1ea30ac2486f04c30e577b2d`, but Android CI run [38466392646](https://github.com/MavyyBlue/CreativeFN-WS/actions/runs/38466392646) **failed at strict Lint**. The only reported Lint error is `ClickableViewAccessibility` on the swipe-enabled Cover Flow `TextView` (`BlueprintOverlayService.kt`, previously line 427). Source compiled before Lint; emulator `launch-smoke` was skipped. This run does NOT certify the Cover Flow version.
-
-This candidate uses a custom `AccessibleOverlayLabel : TextView` which overrides `performClick()`, while keeping the existing gesture handler's `performClick()` dispatch for taps and explicit swipe behavior. No warning suppression, permission or manifest changes, data migration, simulation changes or signing work. Import the ZIP, await full GitHub build/lint + emulator success, then validate overlay navigation and Fortnite touch pass-through on the phone.
-
-## Inline expandable graph devices — 2026-10-13 (CI candidate)
-
-The owner supplied a Fortnite screenshot showing the Cover Flow layout and selected-node bottom inspector working. After owner review, that bottom inspector is replaced with an expanded **version of the selected graph node itself**. A single tap unfolds saved configuration options, notes, and incoming/outgoing direct bindings; tapping the same node again collapses it. A different node tap transfers expansion to that node. Details wrap text and scroll within a capped card, so a device with many links never becomes an unbounded popup. A selected card is drawn on top of nearby nodes without changing their saved graph coordinates. Auto-fitting and small-window view adjustment make expanded contents readable. Existing long-press one-hop Connection Focus, blank-space double-tap clear, graph pan/pinch, Fit, Steps, Links/folders and Cover Flow remain unchanged.
-
-Source baseline: `5d15dc9683ccb1b885471afbdb0ba1ffd0aa60bd`, GitHub Android run [38468092556](https://github.com/MavyyBlue/CreativeFN-WS/actions/runs/38468092556) **passed both build and launch-smoke**. Owner screenshot shows the Cover Flow interface functioning inside Fortnite. The new inline-card revision is **not yet CI/phone accepted**. Verify compilation/lint/emulator then test direct node tap/retap, long-press focus, empty-space double-tap, in-card scroll, dense layout, Fit, pinch, and Fortnite controls outside overlay bounds. No data migrations, signer changes, new permissions or background processing.
-
-## Inline node graph candidate: Lint repair (2026-10-13)
-
-The newly imported inline-expandable graph candidate at `d7999c5c101cd123132ee3d1877ee024bd699789` failed Android run [38473346190](https://github.com/MavyyBlue/CreativeFN-WS/actions/runs/38473346190) at `:app:lintDebug`: a single AndroidX `UseKtx` finding for manual `Canvas.save() / clipRect() / restore()` in the expanded-node drawing method. `launch-smoke` was skipped. This package changes just the clip implementation to `canvas.withClip(...)` and documents the failure; simulator, Room schema, signing, graph storage and UI gestures stay untouched. Await a new green build + emulator and separate owner in-game acceptance before marking inline expansion certified.
+Next: phone validation of the health-check control, selective Epic-documented port/setting corrections backed by observed Creative 1.0 fixtures, practical trace explanations, broader graph-scale testing, and Phase 9 lifecycle profiling. The two owner-provided Creative 1.0 research archives are research/reference inputs, **not** live Fortnite validation; their proposed Channel, Switch, Timer and other devices are deliberately not registered in this slice.

@@ -2,6 +2,8 @@ package dev.creativelogic.mobile.uigraph
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -14,6 +16,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import dev.creativelogic.catalog.InitialDeviceCatalog
 import dev.creativelogic.graph.*
 import dev.creativelogic.mobile.ui.InformationButton
 import dev.creativelogic.mobile.uisimulator.PrototypeSimulatorOverlay
@@ -44,6 +47,8 @@ private fun GraphEditorContent(session: GraphDraftSession) {
     var source by rememberSaveable { mutableStateOf<String?>(null) }
     var event by rememberSaveable { mutableStateOf<String?>(null) }
     var canvasSize by remember { mutableStateOf(Size.Zero) }
+    var showDiagnostics by rememberSaveable { mutableStateOf(false) }
+    val diagnostics = remember(graph.devices, graph.connections) { GraphDiagnostics.inspect(graph, InitialDeviceCatalog.catalog) }
     // Capture a fixed configuration when entering the test scene; no runtime data is stored.
     var simulatorGraph by remember { mutableStateOf<MechanicGraph?>(null) }
     val density = LocalDensity.current.density
@@ -87,6 +92,17 @@ private fun GraphEditorContent(session: GraphDraftSession) {
             TextButton(onClick = { change { session.editor.redo() } }, enabled = session.editor.canRedo, modifier = Modifier.testTag("graph-redo")) { Text("Redo") }
             TextButton(onClick = { fit() }, enabled = graph.devices.isNotEmpty()) { Text("Fit") }
         }
+        // Passive status, no popups during editing. Tapping opens concrete fixes on demand.
+        if (simulatorGraph == null) TextButton(onClick = { showDiagnostics = true },
+            modifier = Modifier.fillMaxWidth().testTag("graph-health-check")) {
+            val label = when {
+                diagnostics.errors > 0 -> "Check mechanic · ${diagnostics.errors} error(s), ${diagnostics.warnings} warning(s)"
+                diagnostics.warnings > 0 -> "Check mechanic · ${diagnostics.warnings} warning(s)"
+                else -> "Check mechanic · No configuration errors"
+            }
+            Text(label, color = if (diagnostics.errors > 0) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.secondary,
+                style = MaterialTheme.typography.labelMedium)
+        }
         if (status == GraphSaveStatus.FAILED) Text("Couldn’t save. Tap Save to retry.", color = MaterialTheme.colorScheme.error)
         if (source != null) Row(verticalAlignment = Alignment.CenterVertically) {
             Text("Event selected → choose a function", Modifier.weight(1f), style = MaterialTheme.typography.bodySmall)
@@ -106,6 +122,32 @@ private fun GraphEditorContent(session: GraphDraftSession) {
         }
         SnackbarHost(snackbars)
     }
+    if (showDiagnostics) AlertDialog(onDismissRequest = { showDiagnostics = false },
+        title = { Text("Mechanic health check") },
+        text = {
+            Column(Modifier.verticalScroll(rememberScrollState()).testTag("graph-diagnostics"),
+                verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Text("${diagnostics.errors} errors · ${diagnostics.warnings} warnings · local checks only",
+                    style = MaterialTheme.typography.labelMedium)
+                if (diagnostics.items.isEmpty()) Text("No issues found in supported configuration checks. Test in Fortnite before publishing.")
+                diagnostics.items.forEach { issue ->
+                    Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                        Text("${issue.severity}: ${issue.title}", style = MaterialTheme.typography.titleSmall,
+                            color = if (issue.severity == DiagnosticSeverity.ERROR) MaterialTheme.colorScheme.error
+                                else MaterialTheme.colorScheme.onSurface)
+                        Text(issue.explanation, style = MaterialTheme.typography.bodySmall)
+                        Text("Try: ${issue.action}", style = MaterialTheme.typography.bodySmall)
+                        val id = issue.deviceId
+                        if (id != null && graph.devices.any { it.id == id }) {
+                            TextButton(onClick = { selected = id; showDiagnostics = false },
+                                modifier = Modifier.testTag("diagnostic-open-device")) { Text("Open device") }
+                        }
+                    }
+                    HorizontalDivider()
+                }
+            }
+        },
+        confirmButton = { TextButton(onClick = { showDiagnostics = false }) { Text("Close") } })
     if (palette) DevicePalette(graph, { palette = false }, { type -> change { session.editor.add(type) }; palette = false }, { selected = it; palette = false })
     if (bindings) BindingPanel(graph, { bindings = false }, { a, e, b, f -> change { session.editor.connect(a, e, b, f) } }, { change { session.editor.deleteConnection(it) } })
     graph.devices.find { it.id == selected }?.let { device -> DeviceConfiguration(device, { selected = null }, { change { session.editor.update(it) } },

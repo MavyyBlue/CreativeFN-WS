@@ -24,6 +24,11 @@ data class Blueprint(
 object BlueprintGenerator {
     fun create(mechanic: SavedMechanic, catalog: DeviceCatalog): Blueprint {
         val diagnostics = mutableListOf<String>()
+        // Reuse the editor health rules in exported construction instructions.
+        // These do not mutate or automatically repair the saved graph.
+        GraphDiagnostics.inspect(mechanic.graph, catalog).items
+            .filter { it.severity != DiagnosticSeverity.INFO }
+            .forEach { issue -> diagnostics += "${issue.severity}: ${issue.title}. ${issue.action}" }
         try { validateGraph(mechanic.graph, catalog) }
         catch (ex: IllegalArgumentException) { diagnostics += "Invalid graph: ${ex.message ?: "review devices and connections"}" }
         val byId = mechanic.graph.devices.associateBy { it.id }

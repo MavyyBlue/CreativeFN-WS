@@ -1,36 +1,27 @@
 # Roadmap — CreativeFN WS
 
-Implementation status is based on source inspection and local checks. **Only GitHub Actions plus owner phone checks certify Android behavior**; simulator behavior is NOT 1:1 Fortnite certified.
+Status is based on implementation evidence. A green Android build and a separate owner device check certify an APK, not parity with Fortnite Creative 1.0.
 
-| Phase | Scope | Source status (2026-10-13) |
+| Phase | Scope | Status at 2026-10-13 |
 |---|---|---|
-| 0 | Android, Room, CI, mobile source importer | Certified through CI run 38338236226 |
-| 1 | Device catalog (8 scoped devices) | Established, live Fortnite fidelity pending |
-| 2 | Canvas, direct bindings, history, autosave | Established, CI certified |
-| 3.1–3.2 | Deterministic sandbox, manual test actions, trace and state inspection | Phase 3.2 certified CI and owner accepted on Android |
-| 4 | Expanded catalog, live verification | Deferred: only 8 existing devices; no fabricated support |
-| 5 | Validation, actionable debug | Graph invariant checks and simulator trace already exist; comprehensive UX not completed |
-| 6 | Local mechanics, search, portable import/export, folders | Existing persistent searchable Library and .c1logic import/export; per-mechanic device folders (candidate), Library-wide folders and thumbnails deferred |
-| 7 | Fortnite construction guide | New shared guide generator with device quantities, configured values, bindings, sequence, checklist, caveats; **first release CI passed; additional phone checks pending** |
-| 8 | Android system overlay | New explicitly started foreground service and TYPE_APPLICATION_OVERLAY bubble/panel with drag, graph zoom/pan, step persistence, notification Stop; **Android CI green for previous build; owner confirms compact landscape Graph renders; new Links/focus features CI pending** |
-| 9 | UX/lifecycle hardening | Initial sizing, step/bubble persistence and passive lifecycle; interactive overlay device inspector + connection focus candidate; profiling pending |
+| 0 | Android, Room, CI, mobile source importer | Established; current baseline run [38474555365](https://github.com/MavyyBlue/CreativeFN-WS/actions/runs/38474555365) green |
+| 1 | Eight-device draft catalog, semantic ports | Established; real Fortnite fidelity incomplete |
+| 2 | Touch graph canvas, bindings, history, autosave | Established; phone-accepted |
+| 3 | Deterministic prototype, manual actions, traces | Established, bounded by explicit unsupported settings |
+| 4 | Source-backed fidelity and selective additional devices | In progress; no new types this slice; live Creative 1.0 comparisons required |
+| 5.1 | Pre-build configuration and graph diagnostics | **Source candidate**, pending importer, full Android CI, phone acceptance |
+| 5.2 | Friendly runtime trace interpretation and debugging | Next bounded slice |
+| 6 | Saved mechanics, search, folders, `.c1logic` | Per-mechanic device folders and import/export established; Library-wide folders/previews deferred |
+| 7 | Construction guide and checklist | Established; Phase 5.1 warnings candidate pending acceptance |
+| 8 | Floating Fortnite reference overlay | **Owner phone-accepted at `9a05ebbd`**: Cover Flow, inline expanding nodes, pan/pinch, Fit, focus, Steps/Links |
+| 9 | Lifecycle, large graphs, profile and UX acceptance | Pending further measurement |
 
-## Immediate Android acceptance gate
+## Phase 5.1 immediate acceptance gate
 
-Import this source ZIP, confirm GitHub Actions build and emulator jobs pass, then check signature continuity before install. On phone: save graph → Blueprints → Guide → overlay permission → Fortnite → bubble → floating Cover Flow Steps/Links/Graph navigation → collapse/reopen/Stop → return and edit. Record whether Fortnite or OEM suppresses the overlay. No separate signing workflow changes. Do not call an uncertified overlay a confirmed working release.
+Import `creative-logic-mobile-source.zip`; record the new expanded commit. Confirm the Android CI `build` and `launch-smoke` jobs run on that same source and pass strict Lint. Check installed-certificate continuity before APK update. On the phone, make a Button → HUD mechanic; **Check mechanic** should have no error/warning but show the general fidelity info. Set HUD Message text blank; inspect warning and **Open device**. Create an unassigned Tracker fed by a Button; confirm assignment advice. Turn on unsupported individual sharing; verify the warning explicitly says the test scene can't represent it, rather than claiming the setting is invalid in Fortnite. Make a Trigger → Trigger feedback cycle; check that it warns, while simulator limits remain intact. Save, generate a blueprint and verify warnings survive, then open the existing overlay above Fortnite and confirm navigation, node expansion, folder links and touch pass-through remain intact.
 
-## Real-device feedback / next focused acceptance
+No Room migration, no new Android permissions, no changed overlay source, no new event/function IDs, no simulator semantics or signing changes. Do not label the Phase 5.1 package certified until all new gates are complete.
 
-GitHub Android run `38435563960` (commit `6efa671`) is **green**, and the owner demonstrated the overlay above Fortnite in landscape with working Steps, Devices and Links. Phase 8 is partially phone-accepted, not fully completed: the graph was blank, and the expanded window consumed most of the game view. The compact candidate passed Android CI `38441055829` at commit `ac754adf`; the owner then confirmed its visible nodes, link and slider controls over Fortnite. Next validate the new Links directory, direct-connection focus, folders, return-to-editor saving and outside-touch pass-through on actual Android. Do not mark Phase 8 complete until that evidence arrives.
+## Next researched candidates
 
-## Next phone gate: connection explorer and graph focus
-
-Owner screenshots after the compact sizing correction confirm the graph, nodes, wire and width/height sliders above Fortnite. New patch (CI pending): Steps/Links/Graph navigation; Links device explorer + named, non-destructive organizational folders; graph tap-to-inspect and long-press one-hop focus; double-tap blank to clear. Folder storage is additive inside the existing format-2 `.c1logic` document and Room schema 1 stays unchanged. Verify folder name keyboard focus returns Fortnite touch behavior, export/reimport and edit-save folder retention. Do not mark this candidate certified before Android CI and separate phone evidence.
-
-## Full-bleed Cover Flow UI candidate (2026-10-13)
-
-The immediate certified prior baseline is `363dde7c` (Android workflow `38458909239` passed). The owner supplied a real-phone Fortnite screenshot with functioning compact graph, direct bindings and selected-node inspector. This new source candidate keeps Steps / Links / Graph and the separate saved device-folder metadata, but moves navigation outside the dark graph panel to a three-card, 3D angled, swipeable Cover Flow-style carousel in its own bounded Android overlay window. A small contextual `⋯` menu preserves manual Size, Hide/Show navigation, Collapse and Stop. A device inspector appears over the full-bleed graph without reducing node canvas height; graph focus and Fit are retained. Existing Room/simulator/overlay permissions/signing untouched. Android build/lint, emulator gesture tests, and Fortnite phone confirmation are still required for this candidate.
-
-## Inline node expansion (Android CI pending)
-
-Graph no longer creates a separate settings bottom sheet. Tapping a device draws a larger version of that device at the same saved graph coordinates, including wrapped options, builder notes and exact incoming/outgoing binding labels. Tap again to collapse; other device taps change selection. Large device configurations are scrolled inside the card (not with the graph pan gesture), and the camera adjusts only enough to keep the card readable in the current overlay size. One-hop long-press focus, blank double-tap focus clear, Fit/pinch/drag, Steps/Links, folder metadata and Cover Flow persist. Node sizes are view-only. Source baseline is CI-green `5d15dc96` and new Android acceptance is pending.
+Research waves (owner-provided, 2026-10-13) prioritize Channel, Switch, Timer, End Game and related devices. These are **candidates only**. Audit each against current Epic Creative 1.0 pages, model required world/player/time state honestly, lock unknown defaults and name conflicts pending live evidence, and add isolated deterministic tests before exposing any new device. Do not paste the proposed JSON registry directly into production. Future work includes Library-wide mechanic folders, previews, `.c1logic` backward compatibility, graph-scale tests and resource profiling.
