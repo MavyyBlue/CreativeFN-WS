@@ -21,6 +21,7 @@ data class ValueSignalSummary(
 }
 
 object ValueSignalReport {
+    private fun isAuditDetail(detail: String) = detail.startsWith("lastFunction = ") || detail.startsWith("lastInputValue = ")
     fun summarize(session: ValueSignalSession): ValueSignalSummary {
         val entries = session.trace
         fun count(kind: ValueSignalSession.Kind): Int = entries.count { it.kind == kind }
@@ -28,10 +29,10 @@ object ValueSignalReport {
             injectedInputs = count(ValueSignalSession.Kind.INPUT),
             emittedEvents = count(ValueSignalSession.Kind.EVENT),
             receivedFunctions = count(ValueSignalSession.Kind.FUNCTION),
-            changedValues = count(ValueSignalSession.Kind.VALUE),
+            changedValues = entries.count { it.kind == ValueSignalSession.Kind.VALUE && !isAuditDetail(it.detail) },
             unmodeledEffects = count(ValueSignalSession.Kind.UNSUPPORTED),
             safetyWarnings = count(ValueSignalSession.Kind.WARNING),
-            modeledDevices = session.values.count { it.value.isNotEmpty() },
+            modeledDevices = session.values.count { (_, values) -> values.keys.any { it != "lastFunction" && it != "lastInputValue" } },
             queuedActions = session.pending,
             stopped = session.halted,
         )
@@ -59,7 +60,7 @@ object ValueSignalReport {
         graph.devices.forEach { device ->
             val values = session.values[device.id].orEmpty()
             text.appendLine("${device.name} [${device.deviceTypeId}]: " +
-                if (values.isEmpty()) "no modeled state" else values.toSortedMap().entries.joinToString { "${it.key}=${it.value}" })
+                if (values.filterKeys { it != "lastFunction" && it != "lastInputValue" }.isEmpty()) "no modeled state" else values.filterKeys { it != "lastFunction" && it != "lastInputValue" }.toSortedMap().entries.joinToString { "${it.key}=${it.value}" })
         }
         text.appendLine("\nEvent and function trace (recorded order):")
         session.trace.forEachIndexed { index, entry ->

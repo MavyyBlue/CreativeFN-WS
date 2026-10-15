@@ -23,27 +23,27 @@ fun PrototypeSimulatorOverlay(graph: MechanicGraph, modifier: Modifier = Modifie
     var actionsOpen by remember(graph) { mutableStateOf(false) }
     var outputOpen by remember(graph) { mutableStateOf(false) }
     var message by remember(graph) { mutableStateOf<String?>(null) }
-    // Runtime state is plain Kotlin, so changing revision explicitly recomposes the scene.
+    var playback by remember(graph) { mutableStateOf<List<SignalVisualCue>>(emptyList()) }
     val trace = remember(engine, revision) { engine?.trace.orEmpty() }
     val states = remember(engine, revision) { engine?.states.orEmpty() }
     fun execute(action: () -> Unit) {
         if (engine == null) return
-        try { action(); revision++; message = null }
-        catch (error: IllegalArgumentException) { message = error.message ?: "Unsupported action" }
+        try {
+            val previous = engine.trace.size
+            action()
+            playback = SignalVisualPlan.fromPrototype(graph, engine.trace.drop(previous))
+            revision++; message = null
+        } catch (error: IllegalArgumentException) { message = error.message ?: "Unsupported action" }
     }
     if (engine == null) {
-        Card(modifier.fillMaxWidth().padding(8.dp)) {
-            Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
-                Text("Prototype simulation unavailable", style = MaterialTheme.typography.titleSmall)
-                Text(attempt.exceptionOrNull()?.message ?: "This graph contains unsupported settings.",
-                    style = MaterialTheme.typography.bodySmall)
-                Text("Check Tracker: Sharing = All, Show on HUD = Off, Assign on Game Start = On. Barrier: Always/None. Unsupported settings are not guessed.",
-                    style = MaterialTheme.typography.labelSmall)
-            }
-        }
+        // A supported blueprint may use Fortnite options that the narrow prototype
+        // does not reproduce (teams, HUD modes, game phases). That is NOT an invalid
+        // binding. Fall back to manual Event → Function tracing instead of blocking it.
+        ValueSignalSimulatorOverlay(graph)
         return
     }
     Box(modifier.fillMaxSize()) {
+        SignalTraceVfx(graph, playback)
         Column(Modifier.align(Alignment.TopCenter).fillMaxWidth().padding(8.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
             Surface(shape = MaterialTheme.shapes.medium, tonalElevation = 5.dp) {
                 Column(Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 6.dp)) {

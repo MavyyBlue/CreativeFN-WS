@@ -1,3 +1,20 @@
+## 2026-10-14 — Comprehensive device menu audit and scalable configuration editor (source candidate, **not** full-device certification)
+
+- User requirement: do not request phone testing until every Creative 1.0 device has a trustworthy current menu/port inventory and all device configuration and blueprint operations work; distinguish blueprint coverage from gameplay simulation.
+- Research archive cross-walk: 208 catalog devices (original eight + 200 research), 3,745 setting labels, 529 new event labels and 978 new function labels. Original archive has 213 records; six out-of-scope/retired/brand-scope are excluded, and the seven existing-device matches remain stable.
+- Expanded the selector metadata from 153 to **200** reference records by parsing originally string-formatted documentation option expressions; **3,685 / 3,745** extracted setting fields now have at least one documented choice or a clearly typed "enter numeric/text" cue, and **60** still lack usable picker evidence. Six research entries have no documented settings in the source. No full live-menu verification has occurred; defaults, contextual filtering, and availability require in-game capture.
+- New searchable device-config Settings / Events / Functions tabs render menu rows lazily, so devices with 50–122 settings do not eagerly construct all field controls. Existing eight device options preserve their types, values, IDs, names, serialized formats, and graph behavior. Device search also matches category, event and function descriptions.
+- Added ``docs/CREATIVE1_DEVICE_VERIFICATION_QUEUE.md``, full 208-record CSV, and machine-readable audit JSON; prioritize screenshots of Switch, Timer, Mutator Zone, Item Granter, Conditional Button, then original eight/Player Counter/Prop Mover and other source gaps. See capture instructions in queue.
+- **Not yet full support.** The parser treats every imported value as a research suggestion, NOT a verified Fortnite default. Do not release as fully supported, alter Room/wire schema, or claim universal simulator fidelity. The prior graph, overlay, signed CI, importer and model IDs were not changed.
+- Validation pending: new candidate Android Gradle, strict Lint, connected test, physical phone test **after verification**; local importer contract/checksums can be checked now.
+
+## 2026-10-14 — Blueprint-first reprioritization
+
+1. Configuration UX is the priority: **implemented as source candidate** picker-first documented device controls with explicit unknown defaults; actual Fortnite menu capture and source QA remain open.
+2. Communication simulation: **source candidate** removes user-entered event output values, corrects audit counts, and permits valid unmodeled team/HUD/phase configurations to fall back to Event→Function tracing. Source-backed behavior coverage, actor-specific team conditions and real Fortnite testing are still open; do not claim all 208 devices simulated.
+3. Visual feedback: **first candidate** deterministic trace-driven node glow/connection orb/output bubble for legacy and reference testers; live viewport sync, accessibility/animation preference and device profiling remain before full certification.
+4. Resume next phase planning only after Android CI, real phone acceptance and comparison against real Fortnite Creative 1.0 menus.
+
 ## 2026-10-14 update — after source catalog expansion
 
 - **Phase 4 reference breadth:** 208 devices (eight original plus 200 research-backed), **catalogue/reference only**. Actual live Creative 1.0 menus and unmodeled functions remain verification work; not complete Fortnite fidelity.

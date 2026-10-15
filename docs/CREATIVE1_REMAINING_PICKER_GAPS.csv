@@ -1,0 +1,61 @@
+device,id,setting,documented_value_expression,source
+Audio Player,audio_player,Audio,Pick an audio cue or sound effect,https://dev.epicgames.com/documentation/en-us/fortnite/using-audio-player-devices-in-fortnite-creative
+Dance Mannequin,dance-mannequin,Custom Character Cosmetics Default,Pick a character skin,https://dev.epicgames.com/documentation/en-us/fortnite/using-dance-mannequin-devices-in-fortnite-creative
+Dance Mannequin,dance-mannequin,Custom Character Cosmetics Preset 2,Pick a character skin,https://dev.epicgames.com/documentation/en-us/fortnite/using-dance-mannequin-devices-in-fortnite-creative
+Dance Mannequin,dance-mannequin,Custom Character Cosmetics Preset 3,Pick a character skin,https://dev.epicgames.com/documentation/en-us/fortnite/using-dance-mannequin-devices-in-fortnite-creative
+Day Sequence,day_sequence,Trigger Volume,,https://dev.epicgames.com/documentation/en-us/fortnite/day-sequence-device-in-fortnite-creative
+Day Sequence,day_sequence,Enable Sun Component,,https://dev.epicgames.com/documentation/en-us/fortnite/day-sequence-device-in-fortnite-creative
+Day Sequence,day_sequence,Intensity,,https://dev.epicgames.com/documentation/en-us/fortnite/day-sequence-device-in-fortnite-creative
+Day Sequence,day_sequence,Color,,https://dev.epicgames.com/documentation/en-us/fortnite/day-sequence-device-in-fortnite-creative
+Day Sequence,day_sequence,Enable Flare,,https://dev.epicgames.com/documentation/en-us/fortnite/day-sequence-device-in-fortnite-creative
+Day Sequence,day_sequence,Rotation Z,,https://dev.epicgames.com/documentation/en-us/fortnite/day-sequence-device-in-fortnite-creative
+Day Sequence,day_sequence,Rotation X,,https://dev.epicgames.com/documentation/en-us/fortnite/day-sequence-device-in-fortnite-creative
+Day Sequence,day_sequence,Enable Fog Component,,https://dev.epicgames.com/documentation/en-us/fortnite/day-sequence-device-in-fortnite-creative
+Day Sequence,day_sequence,Density,,https://dev.epicgames.com/documentation/en-us/fortnite/day-sequence-device-in-fortnite-creative
+Day Sequence,day_sequence,Height Falloff,,https://dev.epicgames.com/documentation/en-us/fortnite/day-sequence-device-in-fortnite-creative
+Day Sequence,day_sequence,Directional Inscattering Color,,https://dev.epicgames.com/documentation/en-us/fortnite/day-sequence-device-in-fortnite-creative
+Day Sequence,day_sequence,Max Opacity,,https://dev.epicgames.com/documentation/en-us/fortnite/day-sequence-device-in-fortnite-creative
+Day Sequence,day_sequence,Secondary Density,,https://dev.epicgames.com/documentation/en-us/fortnite/day-sequence-device-in-fortnite-creative
+Day Sequence,day_sequence,Secondary Falloff,,https://dev.epicgames.com/documentation/en-us/fortnite/day-sequence-device-in-fortnite-creative
+Day Sequence,day_sequence,Secondary Offset,,https://dev.epicgames.com/documentation/en-us/fortnite/day-sequence-device-in-fortnite-creative
+Day Sequence,day_sequence,Sunlight Volumetric Scattering,,https://dev.epicgames.com/documentation/en-us/fortnite/day-sequence-device-in-fortnite-creative
+Day Sequence,day_sequence,Enable Skylight Component,,https://dev.epicgames.com/documentation/en-us/fortnite/day-sequence-device-in-fortnite-creative
+Day Sequence,day_sequence,Enable Sky Atmosphere Component,,https://dev.epicgames.com/documentation/en-us/fortnite/day-sequence-device-in-fortnite-creative
+Day Sequence,day_sequence,Sky Gradient Blend,,https://dev.epicgames.com/documentation/en-us/fortnite/day-sequence-device-in-fortnite-creative
+Day Sequence,day_sequence,Sky Gradient Low Color,,https://dev.epicgames.com/documentation/en-us/fortnite/day-sequence-device-in-fortnite-creative
+Day Sequence,day_sequence,Sky Gradient Mid Color,,https://dev.epicgames.com/documentation/en-us/fortnite/day-sequence-device-in-fortnite-creative
+Day Sequence,day_sequence,Sky Gradient High Color,,https://dev.epicgames.com/documentation/en-us/fortnite/day-sequence-device-in-fortnite-creative
+Day Sequence,day_sequence,Sun Size,,https://dev.epicgames.com/documentation/en-us/fortnite/day-sequence-device-in-fortnite-creative
+Day Sequence,day_sequence,Sun Intensity,,https://dev.epicgames.com/documentation/en-us/fortnite/day-sequence-device-in-fortnite-creative
+Day Sequence,day_sequence,Sun Color,,https://dev.epicgames.com/documentation/en-us/fortnite/day-sequence-device-in-fortnite-creative
+Day Sequence,day_sequence,Custom Sun Color Blend,,https://dev.epicgames.com/documentation/en-us/fortnite/day-sequence-device-in-fortnite-creative
+Day Sequence,day_sequence,Moon Size,,https://dev.epicgames.com/documentation/en-us/fortnite/day-sequence-device-in-fortnite-creative
+Day Sequence,day_sequence,Moon Intensity,,https://dev.epicgames.com/documentation/en-us/fortnite/day-sequence-device-in-fortnite-creative
+Day Sequence,day_sequence,Moon Color,,https://dev.epicgames.com/documentation/en-us/fortnite/day-sequence-device-in-fortnite-creative
+Day Sequence,day_sequence,Moon Halo Size,,https://dev.epicgames.com/documentation/en-us/fortnite/day-sequence-device-in-fortnite-creative
+Day Sequence,day_sequence,Moon Halo Intensity,,https://dev.epicgames.com/documentation/en-us/fortnite/day-sequence-device-in-fortnite-creative
+Day Sequence,day_sequence,Star Brightness,,https://dev.epicgames.com/documentation/en-us/fortnite/day-sequence-device-in-fortnite-creative
+Day Sequence,day_sequence,Light Color,,https://dev.epicgames.com/documentation/en-us/fortnite/day-sequence-device-in-fortnite-creative
+Day Sequence,day_sequence,Shadow Color,,https://dev.epicgames.com/documentation/en-us/fortnite/day-sequence-device-in-fortnite-creative
+Day Sequence,day_sequence,Lighting Brightness,,https://dev.epicgames.com/documentation/en-us/fortnite/day-sequence-device-in-fortnite-creative
+Day Sequence,day_sequence,Coverage,,https://dev.epicgames.com/documentation/en-us/fortnite/day-sequence-device-in-fortnite-creative
+Day Sequence,day_sequence,Size,,https://dev.epicgames.com/documentation/en-us/fortnite/day-sequence-device-in-fortnite-creative
+Day Sequence,day_sequence,Opacity,,https://dev.epicgames.com/documentation/en-us/fortnite/day-sequence-device-in-fortnite-creative
+Day Sequence,day_sequence,Speed,,https://dev.epicgames.com/documentation/en-us/fortnite/day-sequence-device-in-fortnite-creative
+Day Sequence,day_sequence,Direction X,,https://dev.epicgames.com/documentation/en-us/fortnite/day-sequence-device-in-fortnite-creative
+Day Sequence,day_sequence,Direction Y,,https://dev.epicgames.com/documentation/en-us/fortnite/day-sequence-device-in-fortnite-creative
+HUD Controller,hud_controller,Alignment,,https://dev.epicgames.com/documentation/en-us/fortnite/using-hud-controller-devices-in-fortnite-creative
+HUD Controller,hud_controller,Anchor,,https://dev.epicgames.com/documentation/en-us/fortnite/using-hud-controller-devices-in-fortnite-creative
+Item Granter,item-granter,Item to Equip,,https://dev.epicgames.com/documentation/en-us/fortnite/using-item-granter-devices-in-fortnite-creative
+Item Spawner,item-spawner,Initial Secondary Weapon Ammo,,https://dev.epicgames.com/documentation/fortnite/using-item-spawner-devices-in-fortnite-creative?lang=en-US
+Item Spawner,item-spawner,Spare Secondary Weapon Ammo,,https://dev.epicgames.com/documentation/fortnite/using-item-spawner-devices-in-fortnite-creative?lang=en-US
+Level Loader,level-loader,Level Instance Name,Choose a Level,https://dev.epicgames.com/documentation/fortnite/using-level-loader-devices-in-fortnite-creative
+Patchwork Speaker,patchwork-speaker,Music Event Group,Select a group,https://dev.epicgames.com/documentation/fortnite/using-patchwork-speaker-devices-in-fortnite-creative
+Vehicle Mod Box Spawner,vehicle-mod-box-spawner,Paint Color,Select a paint color.,https://dev.epicgames.com/documentation/en-us/fortnite/using-vehicle-mod-box-spawner-devices-in-fortnite-creative
+Vehicle Mod Box Spawner,vehicle-mod-box-spawner,Icon,Select an icon for the mod box.,https://dev.epicgames.com/documentation/en-us/fortnite/using-vehicle-mod-box-spawner-devices-in-fortnite-creative
+Vehicle Mod Box Spawner,vehicle-mod-box-spawner,Custom List Mod 2,Pick a mod type,https://dev.epicgames.com/documentation/en-us/fortnite/using-vehicle-mod-box-spawner-devices-in-fortnite-creative
+Vehicle Mod Box Spawner,vehicle-mod-box-spawner,Custom List Mod 3,Pick a mod type,https://dev.epicgames.com/documentation/en-us/fortnite/using-vehicle-mod-box-spawner-devices-in-fortnite-creative
+Vehicle Mod Box Spawner,vehicle-mod-box-spawner,Custom List Mod 4,Pick a mod type,https://dev.epicgames.com/documentation/en-us/fortnite/using-vehicle-mod-box-spawner-devices-in-fortnite-creative
+Vehicle Mod Box Spawner,vehicle-mod-box-spawner,Custom List Mod 5,Pick a mod type,https://dev.epicgames.com/documentation/en-us/fortnite/using-vehicle-mod-box-spawner-devices-in-fortnite-creative
+Vehicle Mod Box Spawner,vehicle-mod-box-spawner,Custom List Mod 6,Pick a mod type,https://dev.epicgames.com/documentation/en-us/fortnite/using-vehicle-mod-box-spawner-devices-in-fortnite-creative
+Voting Group,voting_group,Custom Widget,Select class of User Widget to display,https://dev.epicgames.com/documentation/en-us/fortnite/using-voting-group-and-voting-options-devices-in-fortnite

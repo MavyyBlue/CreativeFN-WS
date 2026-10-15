@@ -1,3 +1,23 @@
+# Read first — canonical CreativeFN WS product contract
+
+**Before implementing any changes or resetting chat context, read [`docs/PROJECT_SOURCE_OF_TRUTH.md`](docs/PROJECT_SOURCE_OF_TRUTH.md) and [`AGENTS.md`](AGENTS.md).** This repository is a **Fortnite Creative 1.0 Android blueprint workshop**, not a Fortnite emulator. The charter separates green CI, research, staged ZIPs, and in-game-verified device support. Historical sections below are development notes and must not supersede that charter or the latest owner requirements.
+
+---
+
+## 2026-10-14 — Comprehensive device menu audit and scalable configuration editor (source candidate, **not** full-device certification)
+
+- User requirement: do not request phone testing until every Creative 1.0 device has a trustworthy current menu/port inventory and all device configuration and blueprint operations work; distinguish blueprint coverage from gameplay simulation.
+- Research archive cross-walk: 208 catalog devices (original eight + 200 research), 3,745 setting labels, 529 new event labels and 978 new function labels. Original archive has 213 records; six out-of-scope/retired/brand-scope are excluded, and the seven existing-device matches remain stable.
+- Expanded the selector metadata from 153 to **200** reference records by parsing originally string-formatted documentation option expressions; **3,685 / 3,745** extracted setting fields now have at least one documented choice or a clearly typed "enter numeric/text" cue, and **60** still lack usable picker evidence. Six research entries have no documented settings in the source. No full live-menu verification has occurred; defaults, contextual filtering, and availability require in-game capture.
+- New searchable device-config Settings / Events / Functions tabs render menu rows lazily, so devices with 50–122 settings do not eagerly construct all field controls. Existing eight device options preserve their types, values, IDs, names, serialized formats, and graph behavior. Device search also matches category, event and function descriptions.
+- Added ``docs/CREATIVE1_DEVICE_VERIFICATION_QUEUE.md``, full 208-record CSV, and machine-readable audit JSON; prioritize screenshots of Switch, Timer, Mutator Zone, Item Granter, Conditional Button, then original eight/Player Counter/Prop Mover and other source gaps. See capture instructions in queue.
+- **Not yet full support.** The parser treats every imported value as a research suggestion, NOT a verified Fortnite default. Do not release as fully supported, alter Room/wire schema, or claim universal simulator fidelity. The prior graph, overlay, signed CI, importer and model IDs were not changed.
+- Validation pending: new candidate Android Gradle, strict Lint, connected test, physical phone test **after verification**; local importer contract/checksums can be checked now.
+
+## 2026-10-14 — Blueprint settings and signal visualization
+
+The priority of CreativeFN WS is **plan → configure authentic Creative 1.0 device choices → connect Event/Function bindings → save blueprint → consult floating overlay while building in Fortnite**. The optional simulator checks **communication**, not world physics or a 1:1 Fortnite runtime. Research device settings now use source-backed selector dialogs where documented; unknown defaults are unspecified, never silently invented. Event values are **derived**, not filled into Actions. Trace-guided node highlights, moving wire signals, and fading bubbles offer an intuitive view of communication, with the detailed console still available. This is new Android source awaiting CI, not an accepted APK. Some Fortnite option menus and physical effects remain unverified. Motion VFX uses the viewport at test entry; if you pan or zoom during testing, exit and reopen the simulator to realign before running another test.
+
 ## Value testing (2026-10-14 candidate)
 
 CreativeFN WS plans direct Creative 1.0 device bindings. Reference-only device entries are **not** a certified copy of every current Fortnite settings menu. In Value Test, open **Actions +**, choose/search a documented event, supply an actor and a value, then **Queue event** and **Run** or **Step**. The event is **injected**: collision, gameplay prerequisites, team/player state and other physical conditions were not simulated. The values output identifies modeled state transitions and explicitly labels unsupported function effects.

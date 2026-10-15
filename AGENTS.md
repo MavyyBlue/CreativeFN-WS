@@ -1,20 +1,11 @@
-# Repository working rules
+# CreativeFN WS — agent working rules
 
-Work in bounded phases; consult docs/CURRENT_STATE.md and ROADMAP.md before changing code.
-Inspect HEAD, architecture documents and latest available CI evidence. Do not document
-completion without implementation, tests and green Actions. Synchronize CURRENT_STATE,
-ROADMAP, QA and CHANGELOG after each phase. Commit source only, never generated APKs.
+**MANDATORY FIRST READ:** [`docs/PROJECT_SOURCE_OF_TRUTH.md`](docs/PROJECT_SOURCE_OF_TRUTH.md). It is the owner's canonical product definition, priority order, known unknowns, completion rules, and fresh-context handoff. On conflict, follow the owner's latest explicit direction; amend the charter.
 
-Run relevant tests, full `./gradlew check`, strict lint and `assembleDebug`. Fix failures;
-do not weaken checks or add undocumented suppressions. Instrumentation requires a
-phone/emulator and must be recorded separately from JVM checks.
+CreativeFN WS is a **Fortnite Creative 1.0 native Android BLUEPRINT workshop**, not UEFN or a Fortnite game simulator. Priority: **accurate device menus/ports and saved blueprint + overlay** → bounded honest Event → Function checking → trace-driven VFX. Do not substitute catalog breadth or fabricated simulated outcomes for genuine support. **The owner works entirely on an Android phone** and prefers not to test partial device-support candidates.
 
-Pure models and the deterministic simulator must remain Android-free. Stable UUIDs,
-semantic Event → Function ports, explicit versioned DTOs and graph-authoritative
-settings/guides are mandatory. Unsupported behavior must be surfaced, never simulated
-silently. Begin the catalog with Trigger, Tracker and Barrier; no decorative bulk catalog.
+Before code edits inspect live `main`, latest matching GitHub Actions, README, ROADMAP, CURRENT_STATE, and the actual code. Separate implemented source, green CI, phone acceptance, research hypotheses, and pending ZIPs. Source import only, never generated APKs or signing keys. Run targeted tests, `./gradlew check`, strict lint and `assembleDebug` through Android CI. Require `build` **and** `launch-smoke`; phone acceptance is a separate gate. Never suppress or remove tests to turn builds green. Synchronize the charter, CURRENT_STATE, ROADMAP, QA and CHANGELOG with truthful changes.
 
-This is an offline passive companion. Never interact with Fortnite processes, files,
-traffic, controls or screens. No AccessibilityService, capture/OCR, automation, hooks,
-macros or live game-state inference. Overlay permission belongs to Phase 8 and only
-follows an explicit user action, never first launch.
+Keep pure models and simulators Android-free; preserve UUIDs, semantic event/function ports, serialized formats and persisted data. Unsupported or unverified behavior must be explicit. For missing Fortnite settings, request the owner's focused in-game screenshots/video instead of inventing defaults. Preserve the existing working graph editor, Cover Flow navigation, folders, guides and passive foreground overlay.
+
+Never inspect/control Fortnite processes, files, traffic or screens; no AccessibilityService, screen capture, automation, hooks or macros. The floating overlay remains user-started, passive, and on-device. Keep established signing/privacy/security intact.

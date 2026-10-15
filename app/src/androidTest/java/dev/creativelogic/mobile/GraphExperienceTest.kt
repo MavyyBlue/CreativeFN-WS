@@ -42,7 +42,7 @@ class GraphExperienceTest {
         compose.onNodeWithText("Placed").performClick()
         compose.onNodeWithText("Tracker_1").performClick()
         compose.onNodeWithText("Target Value").performScrollTo().performTextReplacement("5")
-        compose.onNodeWithText("Done").performScrollTo().performClick()
+        compose.onNodeWithText("Done").performClick()
         openTools()
         compose.onNodeWithTag("graph-bindings").performClick()
         bind("Trigger_1", "On Triggered", "Tracker_1", "Increment Progress")
@@ -75,6 +75,6 @@ class GraphExperienceTest {
         compose.onNodeWithText("Placed").performClick()
         compose.onNodeWithText("Tracker_1").performClick()
         compose.onNodeWithText("Target Value").performScrollTo().assertTextContains("5")
-        compose.onNodeWithText("Done").performScrollTo().performClick()
+        compose.onNodeWithText("Done").performClick()
     }
 }

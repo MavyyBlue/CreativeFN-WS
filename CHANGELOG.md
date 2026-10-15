@@ -1,3 +1,21 @@
+## 2026-10-14 — Comprehensive device menu audit and scalable configuration editor (source candidate, **not** full-device certification)
+
+- User requirement: do not request phone testing until every Creative 1.0 device has a trustworthy current menu/port inventory and all device configuration and blueprint operations work; distinguish blueprint coverage from gameplay simulation.
+- Research archive cross-walk: 208 catalog devices (original eight + 200 research), 3,745 setting labels, 529 new event labels and 978 new function labels. Original archive has 213 records; six out-of-scope/retired/brand-scope are excluded, and the seven existing-device matches remain stable.
+- Expanded the selector metadata from 153 to **200** reference records by parsing originally string-formatted documentation option expressions; **3,685 / 3,745** extracted setting fields now have at least one documented choice or a clearly typed "enter numeric/text" cue, and **60** still lack usable picker evidence. Six research entries have no documented settings in the source. No full live-menu verification has occurred; defaults, contextual filtering, and availability require in-game capture.
+- New searchable device-config Settings / Events / Functions tabs render menu rows lazily, so devices with 50–122 settings do not eagerly construct all field controls. Existing eight device options preserve their types, values, IDs, names, serialized formats, and graph behavior. Device search also matches category, event and function descriptions.
+- Added ``docs/CREATIVE1_DEVICE_VERIFICATION_QUEUE.md``, full 208-record CSV, and machine-readable audit JSON; prioritize screenshots of Switch, Timer, Mutator Zone, Item Granter, Conditional Button, then original eight/Player Counter/Prop Mover and other source gaps. See capture instructions in queue.
+- **Not yet full support.** The parser treats every imported value as a research suggestion, NOT a verified Fortnite default. Do not release as fully supported, alter Room/wire schema, or claim universal simulator fidelity. The prior graph, overlay, signed CI, importer and model IDs were not changed.
+- Validation pending: new candidate Android Gradle, strict Lint, connected test, physical phone test **after verification**; local importer contract/checksums can be checked now.
+
+## 2026-10-14 — Picker-first blueprint configuration and first trace VFX (source candidate)
+
+- Preserved stable 208-device catalog, `0.2.0-draft` wire/option IDs and Room. Added local research-backed selectors for 153 candidate devices rather than always displaying free-text device settings. Unknown defaults and undocumented options remain unspecified; numeric/text entry only for documented pick/enter controls.
+- Removed manual Event value field in the new test Actions, reduced misleading audit-only value counts in reports, and kept unmodeled effects distinct from actual safety warnings.
+- The legacy narrow simulator now falls back to Event → Function verification for valid non-modeled team/HUD/game-phase configurations rather than blocking blueprint testing.
+- Added bound, trace-derived node perimeter highlights, signal orbs along saved connections and fading output bubbles for the old and expanded tester. Geometry is based on entry viewport; live viewport sync remains deferred.
+- Added research settings UI and JVM compatibility/visual trace/report tests. Source-only/local harness checks; **new Android CI + physical phone acceptance pending**. Overlay and signing untouched.
+
 ## 2026-10-14 — Test report, manual scenario replay, and large-catalog event search (CI candidate)
 
 - Checked run `38526399064`: build green; emulator setup failed with `Error on ZipFile unknown archive` before connected tests launched; selector repair still awaits emulator confirmation.

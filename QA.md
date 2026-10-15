@@ -1,3 +1,25 @@
+## 2026-10-14 — Comprehensive device menu audit and scalable configuration editor (source candidate, **not** full-device certification)
+
+- User requirement: do not request phone testing until every Creative 1.0 device has a trustworthy current menu/port inventory and all device configuration and blueprint operations work; distinguish blueprint coverage from gameplay simulation.
+- Research archive cross-walk: 208 catalog devices (original eight + 200 research), 3,745 setting labels, 529 new event labels and 978 new function labels. Original archive has 213 records; six out-of-scope/retired/brand-scope are excluded, and the seven existing-device matches remain stable.
+- Expanded the selector metadata from 153 to **200** reference records by parsing originally string-formatted documentation option expressions; **3,685 / 3,745** extracted setting fields now have at least one documented choice or a clearly typed "enter numeric/text" cue, and **60** still lack usable picker evidence. Six research entries have no documented settings in the source. No full live-menu verification has occurred; defaults, contextual filtering, and availability require in-game capture.
+- New searchable device-config Settings / Events / Functions tabs render menu rows lazily, so devices with 50–122 settings do not eagerly construct all field controls. Existing eight device options preserve their types, values, IDs, names, serialized formats, and graph behavior. Device search also matches category, event and function descriptions.
+- Added ``docs/CREATIVE1_DEVICE_VERIFICATION_QUEUE.md``, full 208-record CSV, and machine-readable audit JSON; prioritize screenshots of Switch, Timer, Mutator Zone, Item Granter, Conditional Button, then original eight/Player Counter/Prop Mover and other source gaps. See capture instructions in queue.
+- **Not yet full support.** The parser treats every imported value as a research suggestion, NOT a verified Fortnite default. Do not release as fully supported, alter Room/wire schema, or claim universal simulator fidelity. The prior graph, overlay, signed CI, importer and model IDs were not changed.
+- Validation pending: new candidate Android Gradle, strict Lint, connected test, physical phone test **after verification**; local importer contract/checksums can be checked now.
+
+## 2026-10-14 — Picker/configuration and trace-VFX acceptance (source-only)
+
+Baseline tested predecessor: `739a3cc082f2bcd572a12a75fcfbcce54f34bdd0`, Android workflow 38574784317 successful. This source candidate requires independent `build` AND `launch-smoke` gates.
+
+- Verify research options JSON survives Android asset packaging: Mutator Zone → Enabled on Phase must open a selection list (None/All/Pre-Game Only/Gameplay Only). Its options must remain unspecified until explicitly chosen; re-open after save. A setting with no documented choices must not quietly invent a control/default.
+- Original eight DeviceConfiguration option kind controls unchanged; named HUD message is intentionally a text setting, not manual simulation output.
+- Ensure new Actions no longer prompts for an Event value. Test a Mutator Zone → Tracker → Barrier link with target 1 and assigned Tracker. Trace should distinguish emitted events, received functions, modeled state updates and unsupported outcomes.
+- Test legacy-only Trigger → Tracker → Barrier VFX and mixed-reference graph VFX; two routes intentionally retain their established deterministic engines.
+- Test Tracker Sharing=Team and Show on HUD=Detailed, Barrier Gameplay Only: valid blueprint should open fallback value tester, NOT a modal 'incompatible' screen. Team/HUD behavior is NOT simulated or certified; no fake rejection or success.
+- Inspect VFX on run/step/reset, repeated cues, fanout, 60+ cues, very wide graphs, portrait/landscape, unusual zoom, battery impact. First candidate captures viewport at test entry; pan/zoom during test may misalign effects—must sync live viewport before final VFX acceptance.
+- Test Level1 Room saved records, `.c1logic`, guide/list/overlay, APK signature, catalog ID backward compatibility, source importer and launch-smoke Compose tests. Do not promote an SDK/emulator infrastructure failure as a passed gate.
+
 ## 2026-10-14 — Current CI triage and new source-candidate gates
 
 - Run [38526399064](https://github.com/MavyyBlue/CreativeFN-WS/actions/runs/38526399064), commit `b35e5d49a99fdcff74784f16ce6a3ac3b24b16f8`: **build success**. **launch-smoke infrastructure failure** before emulator boot or instrumentation: Android Emulator SDK installation reported `Error on ZipFile unknown archive`; no connected-test result. Do not attribute this to Kotlin, app startup, or a new failing assertion.

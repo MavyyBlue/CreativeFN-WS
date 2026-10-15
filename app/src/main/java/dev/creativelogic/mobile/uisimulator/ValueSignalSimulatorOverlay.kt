@@ -22,6 +22,8 @@ import dev.creativelogic.model.MechanicGraph
 import dev.creativelogic.simulation.ManualScenarioSignal
 import dev.creativelogic.simulation.ValueScenarioReplay
 import dev.creativelogic.simulation.ValueSignalReport
+import dev.creativelogic.simulation.SignalVisualPlan
+import dev.creativelogic.simulation.SignalVisualCue
 import dev.creativelogic.simulation.ValueSignalSession
 
 /** Reference-only event/value testing. Physical Fortnite conditions are never inferred. */
@@ -43,7 +45,7 @@ fun ValueSignalSimulatorOverlay(graph: MechanicGraph) {
     var chooseOpen by remember { mutableStateOf(false) }
     var choice by rememberSaveable(graph) { mutableIntStateOf(0) }
     var actor by rememberSaveable(graph) { mutableStateOf("player-1") }
-    var payload by rememberSaveable(graph) { mutableStateOf("true") }
+    var playback by remember(graph) { mutableStateOf<List<SignalVisualCue>>(emptyList()) }
     var message by remember(graph) { mutableStateOf<String?>(null) }
     val history = remember(graph) { mutableStateListOf<ManualScenarioSignal>() }
     val context = LocalContext.current
@@ -54,8 +56,13 @@ fun ValueSignalSimulatorOverlay(graph: MechanicGraph) {
         }
         return
     }
-    fun apply(action: () -> Unit) {
-        try { action(); revision++; message = null }
+    fun apply(action: () -> Unit, restartPlayback: Boolean = false) {
+        try {
+            val already = engine.trace.size
+            action()
+            playback = SignalVisualPlan.from(graph, if (restartPlayback) engine.trace else engine.trace.drop(already))
+            revision++; message = null
+        }
         catch (e: IllegalArgumentException) { message = e.message ?: "Check your input" }
     }
     fun queueEvent() {
@@ -64,7 +71,7 @@ fun ValueSignalSimulatorOverlay(graph: MechanicGraph) {
             message = "Scenario limit (${ValueScenarioReplay.MAX_SIGNALS} inputs). Clear the list to start another."
             return
         }
-        val input = ManualScenarioSignal(selected.first, selected.second, actor, payload)
+        val input = ManualScenarioSignal(selected.first, selected.second, actor, "true")
         apply { engine.inject(input.deviceId, input.eventId, input.actor, input.value); history.add(input) }
     }
     val trace = remember(revision, engine) { engine.trace }
@@ -72,6 +79,7 @@ fun ValueSignalSimulatorOverlay(graph: MechanicGraph) {
     val summary = remember(revision, engine) { ValueSignalReport.summarize(engine) }
 
     Box(Modifier.fillMaxSize()) {
+        SignalTraceVfx(graph, playback)
         Surface(Modifier.align(Alignment.TopCenter).fillMaxWidth().padding(8.dp),
             shape = MaterialTheme.shapes.medium, tonalElevation = 6.dp) {
             Column(Modifier.padding(horizontal = 10.dp, vertical = 6.dp)) {
@@ -96,7 +104,7 @@ fun ValueSignalSimulatorOverlay(graph: MechanicGraph) {
                     Column(Modifier.verticalScroll(rememberScrollState()).padding(10.dp),
                         verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         Text("INJECT DOCUMENTED EVENT", style = MaterialTheme.typography.labelMedium)
-                        Text("Events are manually declared; game conditions are not tested.",
+                        Text("Declare what happened; connected devices derive their own outcomes.",
                             style = MaterialTheme.typography.labelSmall)
                         OutlinedButton(onClick = { chooseOpen = true }, enabled = choices.isNotEmpty(),
                             modifier = Modifier.fillMaxWidth().testTag("value-sim-choice")) {
@@ -107,14 +115,12 @@ fun ValueSignalSimulatorOverlay(graph: MechanicGraph) {
                             modifier = Modifier.fillMaxWidth().testTag("value-sim-inject")) { Text("Queue event") }
                         OutlinedTextField(actor, { actor = it.take(50) }, label = { Text("Actor (scenario label)") },
                             singleLine = true, modifier = Modifier.fillMaxWidth())
-                        OutlinedTextField(payload, { payload = it.take(80) }, label = { Text("Event value") },
-                            singleLine = true, modifier = Modifier.fillMaxWidth())
                         HorizontalDivider()
                         Text("SCENARIO INPUTS (${history.size})", style = MaterialTheme.typography.labelSmall)
                         Text("Replay runs each saved input in order from a clean test state; it does not save into your blueprint.",
                             style = MaterialTheme.typography.labelSmall)
                         Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                            TextButton(onClick = { apply { ValueScenarioReplay.replay(engine, history.toList()) }; showOutput = true },
+                            TextButton(onClick = { apply({ ValueScenarioReplay.replay(engine, history.toList()) }, restartPlayback = true); showOutput = true },
                                 enabled = history.isNotEmpty(), modifier = Modifier.testTag("value-sim-replay")) {
                                 Text("Replay")
                             }
@@ -153,18 +159,20 @@ fun ValueSignalSimulatorOverlay(graph: MechanicGraph) {
                             message = if (manager != null) "Report copied" else "Clipboard unavailable"
                         }, modifier = Modifier.testTag("value-sim-copy-report")) { Text("Copy report") }
                         graph.devices.forEach { d ->
-                            val state = states[d.id].orEmpty()
+                            val state = states[d.id].orEmpty().filterKeys { it != "lastFunction" && it != "lastInputValue" }
                             Text("${d.name}: ${if (state.isEmpty()) "no modeled state" else state.entries.joinToString { "${it.key}=${it.value}" }}",
                                 style = MaterialTheme.typography.labelSmall)
                         }
                         HorizontalDivider()
                         trace.takeLast(100).asReversed().forEach { entry ->
                             val device = graph.devices.firstOrNull { it.id == entry.deviceId }?.name ?: entry.deviceId
-                            Text("${entry.kind} · $device: ${entry.detail}" +
-                                if (entry.value.isNotEmpty()) " [${entry.value}]" else "",
+                            Text("${entry.kind} · $device: ${entry.detail}",
                                 style = MaterialTheme.typography.labelSmall,
-                                color = if (entry.kind == ValueSignalSession.Kind.UNSUPPORTED || entry.kind == ValueSignalSession.Kind.WARNING)
-                                    MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface)
+                                color = when(entry.kind) {
+                                    ValueSignalSession.Kind.WARNING -> MaterialTheme.colorScheme.error
+                                    ValueSignalSession.Kind.UNSUPPORTED -> MaterialTheme.colorScheme.secondary
+                                    else -> MaterialTheme.colorScheme.onSurface
+                                })
                         }
                     }
                 }
