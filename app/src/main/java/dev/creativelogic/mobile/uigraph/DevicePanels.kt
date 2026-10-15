@@ -3,7 +3,7 @@ package dev.creativelogic.mobile.uigraph
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardOptions
 import android.content.Intent
-import android.net.Uri
+import androidx.core.net.toUri
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -194,7 +194,7 @@ internal fun DeviceConfiguration(device: CreativeDeviceInstance, onDismiss: () -
                 }
             }
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                TextButton(onClick = { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(def.referenceUrl))) },
+                TextButton(onClick = { context.startActivity(Intent(Intent.ACTION_VIEW, def.referenceUrl.toUri())) },
                     modifier = Modifier.weight(1f)) { Text("Epic device reference", style = MaterialTheme.typography.labelSmall) }
                 TextButton(onClick = { save(); onDuplicate() }, enabled = valid) { Text("Duplicate") }
                 TextButton(onClick = onDelete) { Text("Delete", color = MaterialTheme.colorScheme.error) }
