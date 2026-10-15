@@ -1,3 +1,12 @@
+## 2026-10-15 — Android CI compile repair (pending re-run)
+
+**Current imported source:** GitHub `main` `a8fcb83bb4d8d244f358c49c4554bac314c322d4`.
+[Android run 38674385383](https://github.com/MavyyBlue/CreativeFN-WS/actions/runs/38674385383): source importer and Python importer tests passed; core-model, device-catalog, simulation-engine, and graph-engine Kotlin compilation and JVM tests passed. Android `:app:compileDebugKotlin` failed on two app UI source mistakes: an unimported Compose `horizontalScroll` modifier in `DevicePanels.kt`, and calls using trailing lambdas where a local `apply(action, restartPlayback = false)` function expects a Boolean as its final formal argument, in `ValueSignalSimulatorOverlay.kt`. Therefore APK verification and the Android `launch-smoke` job did not run.
+
+**Corrective source bundle:** add the exact Compose foundation import and pass explicit named `action = { ... }` lambdas at every affected call site. Also make the new research-setting Android UI smoke find a large, lazily-rendered setting using the already-present search control before selecting it, without skipping or weakening the actual selection/assertion. Existing device metadata, simulation engines, graph files, signing, overlay service, Room schema, and source-of-truth document are **unchanged**. The corrective ZIP is importer/hash validated locally; Android Kotlin compilation, strict Lint, device instrumentation and phone acceptance are **not yet re-verified** and must pass in a subsequent source-imported commit. The prior successful run 38574784317 predates this candidate and cannot certify it.
+
+---
+
 > **Source of truth:** [`PROJECT_SOURCE_OF_TRUTH.md`](PROJECT_SOURCE_OF_TRUTH.md) governs product scope, device-fidelity standards, staged-versus-imported code, and context resets. This file is a chronological record and includes superseded status statements. Its newest source candidate is **not** automatically implemented in GitHub merely because it was packaged.
 
 ## 2026-10-14 — Comprehensive device menu audit and scalable configuration editor (source candidate, **not** full-device certification)

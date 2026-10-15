@@ -72,7 +72,7 @@ fun ValueSignalSimulatorOverlay(graph: MechanicGraph) {
             return
         }
         val input = ManualScenarioSignal(selected.first, selected.second, actor, "true")
-        apply { engine.inject(input.deviceId, input.eventId, input.actor, input.value); history.add(input) }
+        apply(action = { engine.inject(input.deviceId, input.eventId, input.actor, input.value); history.add(input) })
     }
     val trace = remember(revision, engine) { engine.trace }
     val states = remember(revision, engine) { engine.values }
@@ -86,9 +86,9 @@ fun ValueSignalSimulatorOverlay(graph: MechanicGraph) {
                 Text("VALUE TEST · manual events, not Fortnite gameplay",
                     style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.secondary)
                 Row(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
-                    TextButton(onClick = { apply { engine.run() } }, modifier = Modifier.testTag("sim-run")) { Text("Run") }
-                    TextButton(onClick = { apply { engine.step() } }, modifier = Modifier.testTag("sim-step")) { Text("Step") }
-                    TextButton(onClick = { apply { engine.reset() } }, modifier = Modifier.testTag("sim-reset")) { Text("Reset") }
+                    TextButton(onClick = { apply(action = { engine.run() }) }, modifier = Modifier.testTag("sim-run")) { Text("Run") }
+                    TextButton(onClick = { apply(action = { engine.step() }) }, modifier = Modifier.testTag("sim-step")) { Text("Step") }
+                    TextButton(onClick = { apply(action = { engine.reset() }) }, modifier = Modifier.testTag("sim-reset")) { Text("Reset") }
                     Text("Queue ${engine.pending}", style = MaterialTheme.typography.labelSmall)
                 }
                 if (engine.halted) Text("Safety limit reached. Inspect bindings and Reset.",
