@@ -27,8 +27,24 @@ class ResearchSettingUiTest {
         compose.onNodeWithText("CREATIVE 1.0 RESEARCH · MENU / DEFAULTS NOT YET VERIFIED").assertIsDisplayed()
         // A large device menu is lazy: filter first so the setting is composed before selecting it.
         compose.onNodeWithTag("config-setting-search").performTextInput("Enabled on Phase")
+        compose.onNodeWithTag("setting-Enabled-on-Phase").assertTextContains("Unspecified · choose setting")
         compose.onNodeWithTag("setting-Enabled-on-Phase").performClick()
+        // Dialog choices are lazy too, especially on the 320 x 640 CI emulator.
+        compose.onNodeWithTag("setting-choice-list").performScrollToNode(hasText("Pre-Game Only"))
         compose.onNodeWithText("Pre-Game Only").performClick()
+        compose.onNodeWithTag("setting-Enabled-on-Phase").assertTextContains("Pre-Game Only")
+        compose.onNodeWithText("Done").performClick()
+        // Reopen the device to verify the selected reference value reached the graph.
+        compose.onNodeWithTag("graph-tools-toggle").performClick()
+        compose.onNodeWithTag("graph-devices").performClick()
+        compose.onNodeWithText("Placed").performClick()
+        compose.onNodeWithText("Mutator Zone_1").performClick()
+        compose.onNodeWithTag("config-setting-search").performTextReplacement("Enabled on Phase")
+        compose.onNodeWithTag("setting-Enabled-on-Phase").assertTextContains("Pre-Game Only")
+        compose.onNodeWithTag("setting-Enabled-on-Phase").performClick()
+        compose.onNodeWithTag("setting-choice-list").performScrollToNode(hasText("Not specified in blueprint"))
+        compose.onNodeWithText("Not specified in blueprint").performClick()
+        compose.onNodeWithTag("setting-Enabled-on-Phase").assertTextContains("Unspecified · choose setting")
         compose.onNodeWithText("Done").performClick()
     }
 }

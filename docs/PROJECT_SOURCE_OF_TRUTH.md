@@ -6,6 +6,14 @@
 **Product:** CreativeFN WS (internal name Creative Logic Mobile), native **Android-only**, phone-only development and distribution via GitHub Actions. The owner does **not** have a PC.
 **Snapshot of verified live source at charter creation, 2026-10-14:** `739a3cc082f2bcd572a12a75fcfbcce54f34bdd0`; GitHub Android Actions [run 38574784317](https://github.com/MavyyBlue/CreativeFN-WS/actions/runs/38574784317): both `build` and `launch-smoke` **PASS**. This is CI evidence, not Creative 1.0 menu-fidelity certification. The comprehensive source ZIP being delivered with this charter was **not yet imported/CI tested** at the moment of writing. Check the HEAD and actual CI again after import.
 
+## Current implementation evidence — 2026-10-17 (supersedes snapshot status)
+
+Live `main` is `3a0b9bc14e2c56553a095f9854786fa7226f8295`. Android run **38696750855** passed build/JVM/Lint/APK assembly and failed launch-smoke: downloaded report **16/18 passed, 2 failed, 0 skipped**. Failures are lazy catalog Button selection and lazy research picker Pre-Game Only selection; the old Kotlin compile errors are already fixed and the Mutator Zone value test passed. The earlier comprehensive picker/menu candidate is now imported, but is not fully CI-certified.
+
+The next ZIP is a separate, unimported repair/usability candidate. It adds explicit test search/scroll, checks chosen value readback/clearing, dismisses the settings-search keyboard when opening a picker, and searches long choice lists. Local Python importer/asset suite: **13 passed**. Android validation is pending: the local Gradle distribution download was blocked by DNS. Preserve both CI jobs and wait for device-support readiness before requesting installation.
+
+Recounted implementation: original eight **20 options / 7 events / 19 functions**; research 200 **3,745 options / 529 events / 978 functions**. Picker metadata matches all 200 reference IDs. **60** research setting domains are missing, six records have no settings captured, and defaults/context visibility remain unverified. **208 entries represent 207 distinct display names** because `hud-message` and `hud_message` overlap. Preserve both IDs pending a separately tested versioned consolidation; do not silently merge/delete saved devices. Older audit CSV/JSON counts describe research inventory, not all implemented legacy menus. [DEVICE_SUPPORT_STATUS.md](DEVICE_SUPPORT_STATUS.md) records this distinction and the small next capture batch.
+
 ## 1. North star — blueprint creator first
 
 We are making a **mobile visual planning, troubleshooting, and construction companion for Fortnite Creative 1.0**. We are **not** making UEFN, a Fortnite clone/emulator, a fully simulated Fortnite game engine, or an app that accesses Fortnite's processes or controls.
@@ -98,3 +106,5 @@ Suggested new-conversation opener:
 ## 8. Charter maintenance
 
 **2026-10-14:** Created canonical source of truth based on the owner's repeated blueprint-first clarifications, preference for completed device support before phone testing, offer to provide in-game evidence, and source/C I audit. Document creation does **not** certify any new device or simulated behavior. Keep this section current whenever the project's actual tested state changes.
+
+**2026-10-17:** Re-audited imported HEAD and downloaded CI report, corrected stale pending-repair status, documented actual legacy/reference coverage and the HUD Message overlap, and recorded the separate unimported lazy-menu repair candidate. No newly verified Fortnite menus or gameplay behavior.

@@ -1,3 +1,9 @@
+## 2026-10-17 — Blueprint-first continuation
+
+Live `3a0b9bc` passed build but failed 2/18 emulator tests in Android run 38696750855. The separate unimported candidate fixes lazy-menu targeting and adds keyboard dismissal and long-choice search; Android rerun is pending. **Priority 1 remains device menu/port completeness**, using the concrete [support audit](docs/DEVICE_SUPPORT_STATUS.md) and focused Switch/Timer/Mutator Zone captures. Next come honest communication verification and live-viewport trace VFX. Do not interpret old exhaustive simulation/live-menu gates as the product scope or request repeated partial APK installations. Catalog count is 208 entries, not 208 verified distinct devices.
+
+---
+
 ## 2026-10-14 — Comprehensive device menu audit and scalable configuration editor (source candidate, **not** full-device certification)
 
 - User requirement: do not request phone testing until every Creative 1.0 device has a trustworthy current menu/port inventory and all device configuration and blueprint operations work; distinguish blueprint coverage from gameplay simulation.

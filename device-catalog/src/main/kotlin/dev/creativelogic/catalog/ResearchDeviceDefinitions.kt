@@ -41,7 +41,7 @@ object ResearchDeviceDefinitions {
                 simulationSupport = SimulationSupport.NOT_SIMULATED,
                 limitations = listOf(
                     "RESEARCH REFERENCE ONLY: current Creative 1.0 device availability and complete settings are not verified in-game.",
-                    "Configuration fields are free-text builder notes, initially unspecified; no Fortnite defaults, bounds, or rules are asserted.",
+                    "Settings remain unspecified until chosen. The Android editor uses research-backed selectors or documented numeric/text entry; missing choices remain unavailable. Current Fortnite defaults, bounds, and contextual rules are unverified.",
                     "Manual event injection can test connected functions. Unmodeled functions record UNSUPPORTED instead of a fabricated gameplay effect."
                 ),
                 referenceUrl = d.getValue("url").jsonPrimitive.content,

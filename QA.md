@@ -1,3 +1,13 @@
+## 2026-10-17 — Actual failures and new acceptance gate
+
+At `3a0b9bc`, Android run 38696750855 passed build/JVM/Lint/APK; downloaded artifact 11955191750 reports **18 tests / 2 failures / 0 skipped**. Button was outside the composed catalog rows; Pre-Game Only was outside the composed picker rows. The Mutator Zone value test passed. Earlier Kotlin errors are resolved.
+
+The unimported candidate uses device search and explicit choice-list scrolling without dropping original simulator assertions. Research-setting coverage now asserts initially unspecified, selection, graph readback after reopening, and clearing. A new isolated UI fixture checks long-list search and finite-choice controls. Expected connected suite grows to **19** tests. Require the actual full result, not that expected count alone.
+
+Local importer and picker-evidence contracts: **13 Python tests passed**. Full Android Gradle command was attempted but failed downloading Gradle (`UnknownHostException: downloads.gradle.org`); no local Android compile, Lint, JVM or emulator certification. After import, require build and launch-smoke on the expanded SHA. Check source ZIP hashes/required files/path protections separately. No weakening, skipped smoke job, data migration or signing change. Keep physical phone acceptance separate and deferred until device support is meaningfully ready. [Coverage and captures](docs/DEVICE_SUPPORT_STATUS.md).
+
+---
+
 ## 2026-10-14 — Comprehensive device menu audit and scalable configuration editor (source candidate, **not** full-device certification)
 
 - User requirement: do not request phone testing until every Creative 1.0 device has a trustworthy current menu/port inventory and all device configuration and blueprint operations work; distinguish blueprint coverage from gameplay simulation.

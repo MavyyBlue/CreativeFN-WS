@@ -7,6 +7,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.foundation.text.KeyboardOptions
@@ -39,12 +40,14 @@ internal fun rememberResearchSettingChoices(typeId: String): Map<String, Researc
 /** Selector-first UX. A custom value is allowed only where the source describes a pick/enter control. */
 @Composable
 internal fun ReferenceSettingRow(label: String, stored: String, guidance: ResearchSettingChoices?, onChange: (String) -> Unit) {
+    val keyboard = LocalSoftwareKeyboardController.current
     var chooser by remember { mutableStateOf(false) }
+    var query by remember { mutableStateOf("") }
     var custom by remember(stored) { mutableStateOf(stored) }
     val selectable = guidance != null && (guidance.choices.isNotEmpty() || guidance.entry.isNotEmpty())
     Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
         Text(label, style = MaterialTheme.typography.labelMedium)
-        OutlinedButton(onClick = { chooser = true }, enabled = selectable, modifier = Modifier.fillMaxWidth()
+        OutlinedButton(onClick = { keyboard?.hide(); query = ""; chooser = true }, enabled = selectable, modifier = Modifier.fillMaxWidth()
             .testTag("setting-${label.replace(' ', '-')}") ) {
             Text(when {
                 stored.isNotBlank() -> stored
@@ -57,6 +60,7 @@ internal fun ReferenceSettingRow(label: String, stored: String, guidance: Resear
     }
     if (chooser && guidance != null) {
         val allowCustom = guidance.entry.isNotBlank()
+        val matchingChoices = guidance.choices.filter { it.contains(query, ignoreCase = true) }
         val validCustom = when (guidance.entry) {
             "number" -> custom.trim().toDoubleOrNull()?.isFinite() == true
             else -> custom.isNotBlank()
@@ -66,11 +70,18 @@ internal fun ReferenceSettingRow(label: String, stored: String, guidance: Resear
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text("Reference options · Fortnite's exact current menu and default may differ.",
                         style = MaterialTheme.typography.bodySmall)
-                    LazyColumn(Modifier.heightIn(max = 280.dp)) {
+                    if (guidance.choices.size > 8) {
+                        OutlinedTextField(query, { query = it.take(80) }, modifier = Modifier.fillMaxWidth()
+                            .testTag("setting-choice-search"), singleLine = true, label = { Text("Find a choice") })
+                    }
+                    LazyColumn(Modifier.heightIn(max = 280.dp).testTag("setting-choice-list")) {
                         item { TextButton(onClick = { onChange(""); chooser = false }, modifier = Modifier.fillMaxWidth()) {
                             Text("Not specified in blueprint", modifier = Modifier.fillMaxWidth())
                         } }
-                        items(guidance.choices) { choice ->
+                        if (query.isNotBlank() && matchingChoices.isEmpty()) item {
+                            Text("No matching documented choice", style = MaterialTheme.typography.bodySmall)
+                        }
+                        items(matchingChoices) { choice ->
                             TextButton(onClick = { onChange(choice); chooser = false }, modifier = Modifier.fillMaxWidth()) {
                                 Text(choice, modifier = Modifier.fillMaxWidth())
                             }

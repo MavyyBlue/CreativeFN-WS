@@ -1,6 +1,8 @@
-# Read first — canonical CreativeFN WS product contract
+## 2026-10-17 — Current source and CI
 
-**Before implementing any changes or resetting chat context, read [`docs/PROJECT_SOURCE_OF_TRUTH.md`](docs/PROJECT_SOURCE_OF_TRUTH.md) and [`AGENTS.md`](AGENTS.md).** This repository is a **Fortnite Creative 1.0 Android blueprint workshop**, not a Fortnite emulator. The charter separates green CI, research, staged ZIPs, and in-game-verified device support. Historical sections below are development notes and must not supersede that charter or the latest owner requirements.
+Audited `main` at `3a0b9bc`: Android [38696750855](https://github.com/MavyyBlue/CreativeFN-WS/actions/runs/38696750855) **build passed; launch-smoke failed (16/18 passed)**. Earlier Kotlin repairs are imported. A new, unimported candidate corrects lazy-menu test targeting, improves long-choice pickers, and checks selection/readback/clear. Its 13 Python tests pass; Android validation awaits source import/CI because the local Gradle download is unreachable.
+
+There are 208 catalog entries, including two HUD Message representations; menus/defaults/context remain unverified. [Current device support](docs/DEVICE_SUPPORT_STATUS.md) supersedes older coverage assumptions below. No new APK installation is requested yet.
 
 ---
 
@@ -20,7 +22,7 @@ The priority of CreativeFN WS is **plan → configure authentic Creative 1.0 dev
 
 ## Value testing (2026-10-14 candidate)
 
-CreativeFN WS plans direct Creative 1.0 device bindings. Reference-only device entries are **not** a certified copy of every current Fortnite settings menu. In Value Test, open **Actions +**, choose/search a documented event, supply an actor and a value, then **Queue event** and **Run** or **Step**. The event is **injected**: collision, gameplay prerequisites, team/player state and other physical conditions were not simulated. The values output identifies modeled state transitions and explicitly labels unsupported function effects.
+CreativeFN WS plans direct Creative 1.0 device bindings. Reference-only device entries are **not** a certified copy of every current Fortnite settings menu. In Value Test, open **Actions +**, choose/search a documented event, supply an actor, then **Queue event** and **Run** or **Step**. The event is **injected**: collision, gameplay prerequisites, team/player state and other physical conditions were not simulated. The values output identifies modeled state transitions and explicitly labels unsupported function effects.
 
 **Replay** repeats the recorded manual inputs in order from a reset, processing each fully before the next. **Clear inputs** empties only the in-memory test scenario. **Copy report** puts a plain-text state/trace report on the Android clipboard; it is not uploaded or saved in the blueprint. The scenario and trace disappear when leaving the test scene. Runtime remains limited; test the real device settings and mechanics inside Fortnite before publishing.
 
@@ -38,7 +40,7 @@ An **offline Android workshop** for building Fortnite Creative **1.0** device-me
 
 Create or open a mechanic → tap **Tools** in the upper-left graph corner for **Devices**, **Bindings**, **Fit** or **Simulate** → tap **Check** in the right rail for actionable configuration and wiring findings → fix the indicated devices → **Simulate** only supported scenarios with Actions / Step / Run / Pause / Reset and trace/state output → Save → Blueprints → Guide/checklist → Overlay → approve permission → return to Fortnite → tap the FN bubble. The overlay supports separate orientation preferences, movable/resizable panel, Cover Flow Steps/Links/Graph navigation, graph pinch/drag/Fit, one-hop connection focus and scrollable expansion within tapped nodes. Stop via the foreground notification. `.c1logic` import/export uses Android's document picker.
 
-Eight legacy device types remain stable: Trigger, Tracker, Barrier, HUD Message, Button, Round Settings, Creature Manager and Elimination Manager. The new source candidate adds 200 labeled documentation-scope REFERENCE-ONLY device records (208 catalog entries total) and a manual Actions event/value tester for graphs using any new device; it does not imply Fortnite-complete in-game menus or implemented functions for every device. The catalog is a reference subset, **not full Fortnite game emulation**; the simulator has specific option restrictions. The health check distinguishes unusable sandbox configurations from actual graph errors and explicitly calls out unverified fidelity. Warnings are not proof a real Fortnite device is wrong. Consult [diagnostics](docs/DIAGNOSTICS_V1.md), [fidelity notes](FORTNITE_FIDELITY.md) and [current state](docs/CURRENT_STATE.md).
+Eight legacy device types remain stable: Trigger, Tracker, Barrier, HUD Message, Button, Round Settings, Creature Manager and Elimination Manager. The new source candidate adds 200 labeled documentation-scope REFERENCE-ONLY device records (208 catalog entries total) and a manual Actions event tester for graphs using any new device; it does not imply Fortnite-complete in-game menus or implemented functions for every device. The catalog is a reference subset, **not full Fortnite game emulation**; the simulator has specific option restrictions. The health check distinguishes unusable sandbox configurations from actual graph errors and explicitly calls out unverified fidelity. Warnings are not proof a real Fortnite device is wrong. Consult [diagnostics](docs/DIAGNOSTICS_V1.md), [fidelity notes](FORTNITE_FIDELITY.md) and [current state](docs/CURRENT_STATE.md).
 
 ## Build and delivery
 
@@ -52,8 +54,8 @@ The editor graph now occupies the space directly below its header, with no botto
 
 ## Research reference expansion + value-test Actions (source candidate)
 
-Search **Devices** to place research-backed Creative documentation entries. Their setting names and Event/Function port labels come from the October 13 research archive and official Epic URLs, but default values and precise setting type constraints are deliberately left **unspecified**. Enter values as free-text building notes and confirm actual choices inside Creative. Unsupported or missing source ports remain unconnected rather than fabricated.
+Search **Devices** to place research-backed Creative documentation entries. Their setting names and Event/Function port labels come from the October 13 research archive and official Epic URLs, but default values and precise setting type constraints are deliberately left **unspecified**. Use documented selectors or numeric/text controls where evidence exists; unknown choices stay unavailable. Confirm current menus inside Creative. Unsupported or missing source ports remain unconnected rather than fabricated.
 
-When a graph contains any new reference device, **Simulate** opens the new **VALUE TEST** scene. Expand **Actions +**, select a placed device event, enter an actor and test value, and **Queue event**. Tap **Run** or **Step**. Output shows calculated values and explicit **UNSUPPORTED** markers where a received function has no reliable model. Injection bypasses the triggering game's conditions on purpose. Existing all-legacy graphs keep their original simulator and golden trace behavior.
+When a graph contains any new reference device, **Simulate** opens the new **VALUE TEST** scene. Expand **Actions +**, select a placed device event, choose an actor, and **Queue event**. Tap **Run** or **Step**. Output shows calculated values and explicit **UNSUPPORTED** markers where a received function has no reliable model. Injection bypasses the triggering game's conditions on purpose. Existing all-legacy graphs keep their original simulator and golden trace behavior.
 
 This is a source-only implementation awaiting Android CI, emulator and real-device confirmation. See `docs/CURRENT_STATE.md` for exact research counts and test boundaries.

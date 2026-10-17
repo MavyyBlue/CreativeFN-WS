@@ -19,7 +19,9 @@ class SimulatorSceneTest {
         }
         compose.onNodeWithTag("graph-tools-toggle").performClick()
         compose.onNodeWithTag("graph-devices").performClick()
-        compose.onNodeWithText("Button").performClick()
+        // The expanded catalog is lazy; Button need not be in the first visible rows.
+        compose.onNodeWithText("Search devices").performTextInput("Button")
+        compose.onNode(hasText("Button", substring = false) and hasClickAction() and !hasSetTextAction()).performClick()
         compose.onNodeWithTag("logic-canvas").assert(hasStateDescription("1 devices, 0 bindings"))
         compose.onNodeWithTag("graph-tools-toggle").performClick()
         compose.onNodeWithTag("graph-simulation-toggle").performClick()

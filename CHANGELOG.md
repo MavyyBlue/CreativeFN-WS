@@ -1,3 +1,13 @@
+## 2026-10-17 — Lazy-menu CI repair and research picker usability (unimported)
+
+- Audited live `3a0b9bc` and Android 38696750855: build passed; actual emulator report 16/18 passed. Earlier Kotlin repairs are already imported.
+- Search for the Button card and scroll the lazy choice list in the two failing tests; retain simulator assertions and add chosen-value graph readback/clearing checks.
+- Dismiss the settings-search keyboard when opening a picker; add search for choice lists longer than eight. Add an isolated long-menu UI regression and two evidence-asset contract tests.
+- Correct research limitation text and document actual counts, missing menus and duplicate HUD Message representations without altering stable IDs or saved formats.
+- Local Python: 13 passed. Full Android checks blocked by unavailable Gradle download; candidate needs import and fresh CI. No new Fortnite fidelity or phone acceptance claim.
+
+---
+
 ## 2026-10-14 — Comprehensive device menu audit and scalable configuration editor (source candidate, **not** full-device certification)
 
 - User requirement: do not request phone testing until every Creative 1.0 device has a trustworthy current menu/port inventory and all device configuration and blueprint operations work; distinguish blueprint coverage from gameplay simulation.

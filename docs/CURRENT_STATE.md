@@ -1,3 +1,15 @@
+## 2026-10-17 — Live HEAD audit and lazy-menu repair candidate
+
+Audited GitHub `main` at `3a0b9bc14e2c56553a095f9854786fa7226f8295`. Latest Android [run 38696750855](https://github.com/MavyyBlue/CreativeFN-WS/actions/runs/38696750855) completed: **build PASS**, **launch-smoke FAIL**. Downloaded `launch-smoke-reports` artifact `11955191750` contains **18 tests, 2 failures, 0 skipped**. `SimulatorSceneTest` could not find Button in the lazy catalog; `ResearchSettingUiTest` could not find Pre-Game Only in the lazy picker. The earlier missing import/callback errors are repaired on this HEAD; `ValueSignalUiTest` passed. This is an app-test failure, not an emulator provisioning failure.
+
+This **unimported source candidate** searches for the Button card, explicitly scrolls the setting-choice list, keeps existing simulator assertions, and adds selection/readback/clear assertions. Opening a picker dismisses the settings-search keyboard; longer finite-choice lists gain a search field. New UI regression source covers search/select/clear without allowing arbitrary text for finite choices. Research limitations text now accurately describes selectors instead of generic free-text notes.
+
+Actual source audit: **208 stable entries, 207 distinct display names** (legacy `hud-message` and research `hud_message` both display HUD Message). The original eight expose **20 settings, 7 events, 19 functions**; 200 research entries expose **3,745 settings, 529 events, 978 functions**. All 200 reference IDs and setting keys match the Android picker evidence. **3,685** rows have choice/input guidance, **60** lack it, and six records contain no captured settings. Neither the larger documentation-audit counts for the original eight nor catalog presence proves these options/ports are all implemented. Defaults, contextual filtering, complete menus and current availability remain unverified. See [device support status](DEVICE_SUPPORT_STATUS.md) for exact boundaries and the next focused capture batch.
+
+Validation: **13 Python importer/asset tests passed**; source diff and exported ZIP/importer checks are recorded in the handoff. Full local `./gradlew --no-daemon check lintDebug assembleDebug assembleDebugAndroidTest` could not start because `downloads.gradle.org` did not resolve. The candidate has **no new Android compile/Lint/JVM/emulator result** and is not committed to GitHub. Require both Android jobs on the newly imported SHA. No owner installation request until device support is meaningfully ready. Room, wire formats, option/port IDs/defaults, signing, overlay service, simulator engines and protected workflows are unchanged.
+
+---
+
 ## 2026-10-15 — Android CI compile repair (pending re-run)
 
 **Current imported source:** GitHub `main` `a8fcb83bb4d8d244f358c49c4554bac314c322d4`.
