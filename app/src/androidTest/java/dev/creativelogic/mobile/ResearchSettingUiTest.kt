@@ -28,7 +28,10 @@ class ResearchSettingUiTest {
         // A large device menu is lazy: filter first so the setting is composed before selecting it.
         compose.onNodeWithTag("config-setting-search").performTextInput("Enabled on Phase")
         compose.onNodeWithTag("setting-Enabled-on-Phase").assertTextContains("Unspecified · choose setting")
-        compose.onNodeWithTag("setting-Enabled-on-Phase").performClick()
+        compose.onNodeWithTag("setting-Enabled-on-Phase").performScrollTo().assertIsDisplayed().performClick()
+        compose.waitUntil(5_000) {
+            compose.onAllNodes(hasTestTag("setting-choice-list")).fetchSemanticsNodes().isNotEmpty()
+        }
         // Dialog choices are lazy too, especially on the 320 x 640 CI emulator.
         compose.onNodeWithTag("setting-choice-list").performScrollToNode(hasText("Pre-Game Only"))
         compose.onNodeWithText("Pre-Game Only").performClick()
@@ -41,7 +44,10 @@ class ResearchSettingUiTest {
         compose.onNodeWithText("Mutator Zone_1").performClick()
         compose.onNodeWithTag("config-setting-search").performTextReplacement("Enabled on Phase")
         compose.onNodeWithTag("setting-Enabled-on-Phase").assertTextContains("Pre-Game Only")
-        compose.onNodeWithTag("setting-Enabled-on-Phase").performClick()
+        compose.onNodeWithTag("setting-Enabled-on-Phase").performScrollTo().assertIsDisplayed().performClick()
+        compose.waitUntil(5_000) {
+            compose.onAllNodes(hasTestTag("setting-choice-list")).fetchSemanticsNodes().isNotEmpty()
+        }
         compose.onNodeWithTag("setting-choice-list").performScrollToNode(hasText("Not specified in blueprint"))
         compose.onNodeWithText("Not specified in blueprint").performClick()
         compose.onNodeWithTag("setting-Enabled-on-Phase").assertTextContains("Unspecified · choose setting")

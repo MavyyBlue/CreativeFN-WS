@@ -1,3 +1,5 @@
+> **2026-10-17 scope correction:** This is an optional research archive, not a completion checklist. Missing nonessential settings/defaults/context do not block device support. Request evidence only for uncertain purpose, actual Events/Functions or an essential communication setting. No whole-menu capture batch is required. See PROJECT_SOURCE_OF_TRUTH.md.
+
 # Source gaps to photograph in Fortnite Creative 1.0
 
 This is the **shortest high-priority missing-picker list** after importing every usable choice/value expression from the existing 2026-10-13 research. Do not interpret listed choices as verified defaults. **All devices still require current-menu/default/contextual verification**; see `CREATIVE1_DEVICE_VERIFICATION_QUEUE.md` for the full 208-device audit.

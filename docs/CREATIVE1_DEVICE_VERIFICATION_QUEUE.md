@@ -1,3 +1,5 @@
+> **2026-10-17 scope correction:** This is an optional research archive, not a completion checklist. Missing nonessential settings/defaults/context do not block device support. Request evidence only for uncertain purpose, actual Events/Functions or an essential communication setting. No whole-menu capture batch is required. See PROJECT_SOURCE_OF_TRUTH.md.
+
 # CreativeFN WS — Fortnite Creative 1.0 in-game verification queue
 
 **Status: not full-fidelity certified.** This is a working capture list, not a claim that every device is present in the current mobile Creative 1.0 inventory. Research was collected on 2026-10-13. Prioritize the current game client over any older documentation.

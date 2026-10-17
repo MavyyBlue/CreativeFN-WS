@@ -1,3 +1,15 @@
+## 2026-10-17 — Essential device communication scope (supersedes exhaustive-menu gates)
+
+The owner clarified that device support means **accurate purpose, actual incoming Functions/outgoing Events, and only settings essential to blueprint intent or communication conditions**. Full-menu/default/contextual parity and physical gameplay reproduction are not required. The 60 missing picker domains and six no-settings records are optional research gaps unless they affect that contract. The former full capture batch is withdrawn as a prerequisite. Preserve existing settings/IDs and saved blueprints.
+
+A receiver-only device is a valid endpoint. A Function requesting an effect does not create an outgoing Event or prove the physical result. Report structural validity, signal delivery and relevant configuration support separately from unknown gameplay. The owner's Ball Spawner example illustrates this boundary; this update adds no unverified port or gameplay behavior.
+
+Latest live source `256d99f223a750c1cc3eada47032447154caec24` includes the previous ZIP. Android [39060899455](https://github.com/MavyyBlue/CreativeFN-WS/actions/runs/39060899455): **build PASS; launch-smoke 18/19 passed, 1 failure, 0 skipped**. Downloaded artifact `12111487409` identifies ResearchSettingUiTest: picker list absent after attempted opening. This new, unimported candidate scrolls the setting button into view and waits for the actual dialog before interacting; all selection/readback/clear assertions remain. New Android CI is pending. The clarification is documented direction, not an implemented profile/checker rewrite.
+
+Older entries below are historical; this scope and the canonical charter take precedence.
+
+---
+
 ## 2026-10-17 — Current source and CI
 
 Audited `main` at `3a0b9bc`: Android [38696750855](https://github.com/MavyyBlue/CreativeFN-WS/actions/runs/38696750855) **build passed; launch-smoke failed (16/18 passed)**. Earlier Kotlin repairs are imported. A new, unimported candidate corrects lazy-menu test targeting, improves long-choice pickers, and checks selection/readback/clear. Its 13 Python tests pass; Android validation awaits source import/CI because the local Gradle download is unreachable.

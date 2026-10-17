@@ -1,3 +1,11 @@
+## 2026-10-17 — Essential device communication scope (supersedes exhaustive-menu gates)
+
+The owner clarified that device support means **accurate purpose, actual incoming Functions/outgoing Events, and only settings essential to blueprint intent or communication conditions**. Full-menu/default/contextual parity and physical gameplay reproduction are not required. The 60 missing picker domains and six no-settings records are optional research gaps unless they affect that contract. The former full capture batch is withdrawn as a prerequisite. Preserve existing settings/IDs and saved blueprints.
+
+A receiver-only device is a valid endpoint. A Function requesting an effect does not create an outgoing Event or prove the physical result. Report structural validity, signal delivery and relevant configuration support separately from unknown gameplay. The owner's Ball Spawner example illustrates this boundary; this update adds no unverified port or gameplay behavior.
+
+Latest live source `256d99f223a750c1cc3eada47032447154caec24` includes the previous ZIP. Android [39060899455](https://github.com/MavyyBlue/CreativeFN-WS/actions/runs/39060899455): **build PASS; launch-smoke 18/19 passed, 1 failure, 0 skipped**. Downloaded artifact `12111487409` identifies ResearchSettingUiTest: picker list absent after attempted opening. This new, unimported candidate scrolls the setting button into view and waits for the actual dialog before interacting; all selection/readback/clear assertions remain. New Android CI is pending. The clarification is documented direction, not an implemented profile/checker rewrite.
+
 # Device support evidence — 2026-10-17
 
 Audited live `main` at `3a0b9bc14e2c56553a095f9854786fa7226f8295`, not an older source ZIP. This document describes implemented source and remaining evidence; it does not certify Fortnite parity.
@@ -34,17 +42,11 @@ This unimported candidate searches the catalog before selecting Button and scrol
 
 Local validation: **13 Python tests passed**, covering importer security/integrity plus matching picker device/setting IDs and allowed evidence control types. The full Android command was attempted but Gradle could not download (`UnknownHostException: downloads.gradle.org`). This candidate is **not Android-tested or committed to GitHub**. Expected emulator suite after import: 19 tests; require the real complete passing report and both CI jobs on the imported SHA. ZIP validation is separate from CI.
 
-## Next owner capture batch — three devices
+## Next work — essential profiles, not exhaustive captures
 
-A short recording per device is enough to start. Show the current Fortnite version/date if available, fresh placement/defaults, every Customize row and selector, then Events and Functions. Scroll through the whole menu and repeat after changing the parent options below. These are verification targets, not claims about which controls must exist in your current client.
+For each device, audit purpose, documented incoming Functions and outgoing Events, and settings that actually affect blueprint intent or communication. Explicitly identify source-only, receiver-only or both where evidence permits. Verify missing ports or essential conditions with focused references/captures; do not request every menu or default. The previously proposed Switch/Timer/Mutator Zone capture batch is no longer a prerequisite.
 
-| Device | Focus |
-|---|---|
-| Switch | State per player, persistence, limits/cooldowns and which rows those choices reveal; complete Events/Functions |
-| Timer | Player/global scope, completion behavior, persistence and urgency controls/context; complete Events/Functions |
-| Mutator Zone | Enabled on Phase, team/class inversion, gravity/movement controls and any dependent rows; complete Events/Functions |
-
-If any target is unavailable, record that instead of searching indefinitely. After incorporating these captures, the next focused batch is Item Granter (especially Item to Equip and item-dependent rows) and Conditional Button (key-item slots/requirements and context). Do not ask for another partial APK installation to collect evidence. Continue importer/JVM/CI validation independently.
+The 60 missing domains and six records without captured settings are optional research gaps. They do not themselves make a device unsupported. Existing stored options and IDs remain intact. No full-menu removal or catalog migration is part of this documentation update. Simplified profile implementation and checker wording still need a source audit and focused changes.
 
 ## Preserved contract
 
