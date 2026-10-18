@@ -1,3 +1,17 @@
+## 2026-10-17 — Imported scope update and actual HEAD smoke failure
+
+The scope-clarification ZIP is **already imported** at `b820712ca98809b22d5e8d643fb8db750f433273`; older “unimported candidate” sections refer to earlier handoffs. Android [39062306268](https://github.com/MavyyBlue/CreativeFN-WS/actions/runs/39062306268) **build PASS; launch-smoke FAIL**. Downloaded report artifact `12111523054`: **19 tests, 1 failure, 0 skipped**. Emulator startup and instrumentation ran. ResearchSettingUiTest failed at line 31 inside `performScrollTo()`: the setting node was no longer in the semantics tree, before opening the dialog. This is not an unverified infrastructure diagnosis.
+
+The new source-only correction scrolls through the stable config LazyColumn, refetches the setting button, asserts visibility/click action and invokes its actual semantics OnClick. It still requires the real dialog, choice selection, graph readback after reopening and clearing; no assertion or test is removed. This does not certify touch-coordinate scrolling. New Android execution is pending after import; no production behavior, saved-data contract or workflow changed.
+
+Evidence annotations stay in the separate [device evidence ledger](DEVICE_EVIDENCE_LEDGER.md) pending review of actual findings; no production JSON/schema change. Lyra's Ball Spawner independent official-doc verification is next, followed by Movement Modulator and Input Trigger. Missing nonessential menus remain optional research.
+
+A ZIP-only extraction lacks the deliberately excluded `.github` workflow. The existing bootstrap test checks that workflow's embedded importer and therefore needs a full repository checkout with the ZIP applied. Do not skip the check, package protected workflows, or mislabel a missing-file error as a product regression. Python checks and importer validation must be recorded separately from Android CI.
+
+**Local validation for this new candidate:** 13/13 Python tests passed both in the working checkout and after applying all 134 packaged files onto a full repository copy, including the bootstrap check. ZIP checksums/source bytes match. Android Gradle was attempted again but downloads.gradle.org did not resolve; no new Android execution result.
+
+---
+
 ## 2026-10-17 — Essential device communication scope (supersedes exhaustive-menu gates)
 
 The owner clarified that device support means **accurate purpose, actual incoming Functions/outgoing Events, and only settings essential to blueprint intent or communication conditions**. Full-menu/default/contextual parity and physical gameplay reproduction are not required. The 60 missing picker domains and six no-settings records are optional research gaps unless they affect that contract. The former full capture batch is withdrawn as a prerequisite. Preserve existing settings/IDs and saved blueprints.

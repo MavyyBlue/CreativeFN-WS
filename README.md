@@ -1,3 +1,9 @@
+## 2026-10-17 — Audit follow-up
+
+Scope update imported at `b820712`. Android run 39062306268 passed build; the actual emulator report is **18/19 passed**, with ResearchSettingUiTest failing on a disposed lazy-list item during performScrollTo. A new unimported test-only correction uses the stable list container and real semantics click; original picker/readback/clear checks remain. No production or stored-data changes. New Android CI pending. See [current state](docs/CURRENT_STATE.md) and [evidence ledger](docs/DEVICE_EVIDENCE_LEDGER.md). Research annotations remain ledger-only; Ball Spawner verification is next.
+
+---
+
 ## 2026-10-17 — Essential device communication scope (supersedes exhaustive-menu gates)
 
 The owner clarified that device support means **accurate purpose, actual incoming Functions/outgoing Events, and only settings essential to blueprint intent or communication conditions**. Full-menu/default/contextual parity and physical gameplay reproduction are not required. The 60 missing picker domains and six no-settings records are optional research gaps unless they affect that contract. The former full capture batch is withdrawn as a prerequisite. Preserve existing settings/IDs and saved blueprints.
